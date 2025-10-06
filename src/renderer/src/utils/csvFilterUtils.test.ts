@@ -676,83 +676,86 @@ Jane,30,LA`
   })
 
   it('handles single-column CSV with no delimiters correctly', async () => {
-    const singleColumnCSV = `Associated Company/Partnership Site
-advanced-hair-restoration
-alliance-medical-center
-axiomhealth
-azul-vision`
+    const singleColumnCSV = `Partner Companies
+nova-skin-therapy
+unity-health-systems
+vertex-medical-group
+azure-eye-care-center`
 
     const result = await parseCSV(singleColumnCSV, 'single-column.csv')
 
-    expect(result.headers).toEqual(['Associated Company/Partnership Site'])
+    expect(result.headers).toEqual(['Partner Companies'])
     expect(result.data).toEqual([
-      { 'Associated Company/Partnership Site': 'advanced-hair-restoration' },
-      { 'Associated Company/Partnership Site': 'alliance-medical-center' },
-      { 'Associated Company/Partnership Site': 'axiomhealth' },
-      { 'Associated Company/Partnership Site': 'azul-vision' }
+      { 'Partner Companies': 'nova-skin-therapy' },
+      { 'Partner Companies': 'unity-health-systems' },
+      { 'Partner Companies': 'vertex-medical-group' },
+      { 'Partner Companies': 'azure-eye-care-center' }
     ])
   })
 
   it('handles single-column CSV with realistic data from user example', async () => {
-    const singleColumnCSV = `Associated Company/Partnership Site
-advanced-hair-restoration
-alliance-medical-center
-axiomhealth
-azul-vision
-azul-vision-management
-broad-street
-citymd-scrubs
-citymd-summit-health
-doctors-urgent-care-of-dfw
-eastern-virginia-medical-school
-elite-anesthesia-associates
-embo-partners
-exquisite-dental-implant-center
-favorite-staffing
-georgia-kidney-and-hypertension-clinic
-groth-pain-spine
-isto-biologics
-ivim
-kaiser-permanente-oakland-emergency-dept
-kestra-medical
-keyops
-kindbody
-kiwanda-cottages-noble-house
-lucid-staffing-solutions-llc
-memory-treatment-centers
-michigan-state-university
-millennium-neonatology
-modern-dermatology-westport
-montana-arthritis-center
-noble-anethesia-partners
-partners-in-nephrology-and-endocrinology
-phoenix-children-s-hospital
-pritzker-school-of-medicine
-pure-infusion
-rady-children-s-hospital-san-diego
-retina-consultants-of-orange-county
-reunion-rehabilitation-hospital-plano
-rma
-south-marin-health-wellness-center
-summit-medical-staffing
-summit-radiology
-sunflower-development-center
-texas-health-breeze-urgent-care
-the-oaks
-timothy-groth-md-pc
-uc-davis
-university-of-louisville
-waterville-animal-group`
+    const singleColumnCSV = `Partner Companies
+zenith-dental-clinic
+boreal-medical-associates
+crystal-wellness-center
+diamond-family-practice
+echo-primary-care-clinic
+falcon-sports-medicine
+glacier-orthopedic-group
+harmony-mental-health
+indigo-cardiology-institute
+jade-neurology-center
+kestrel-physical-therapy
+lark-urgent-care
+marble-dermatology-practice
+nebula-oncology-center
+oasis-emergency-services
+pearl-obstetrics-group
+quasar-surgical-associates
+raven-womens-health
+sage-general-medicine
+tundra-pediatrics-clinic
+umbra-urology-specialists
+vapor-nutrition-services
+willow-skin-care-center
+xavier-pharmacy-services
+yarn-imaging-radiology
+zodiac-obstetrics-practice
+apex-senior-living-center
+bravo-trauma-care-unit
+charlie-critical-medicine
+delta-rehab-services
+echo-pathology-lab
+foxtrot-endocrine-group
+golf-gastroenterology-center
+hotel-pulmonary-medicine
+indigo-rheumatology-care
+juliet-arthritis-treatment
+kilo-sleep-disorder-clinic
+lima-healthcare-managers
+mike-cardiovascular-care
+november-wound-healing
+oscar-infectious-diseases
+papa-oncology-treatment
+quebec-reproductive-health
+romeo-emergency-medicine
+sierra-pediatric-care
+tango-internal-medicine
+uniform-allergy-specialists
+victor-general-surgery
+whiskey-rehabilitation
+xray-imaging-services
+yankee-laboratory-testing`
 
     const result = await parseCSV(singleColumnCSV, 'user-example-single-column.csv')
 
-    expect(result.headers).toEqual(['Associated Company/Partnership Site'])
+    expect(result.headers).toEqual(['Partner Companies'])
     expect(result.data).toHaveLength(48) // All non-empty rows after filtering
     expect(result.data[0]).toEqual({
-      'Associated Company/Partnership Site': 'advanced-hair-restoration'
+      'Partner Companies': 'zenith-dental-clinic'
     })
     expect(result.data[47]).toEqual({
-      'Associated Company/Partnership Site': 'waterville-animal-group'
+      'Partner Companies': 'yankee-laboratory-testing'
     })
   })
 
