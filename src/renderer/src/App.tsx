@@ -146,35 +146,66 @@ function App(): React.JSX.Element {
       </Grid>
       
       {rightCSV && (
-        <Box sx={{ mt: 3 }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Select Column to Filter By</InputLabel>
-            <Select
-              value={selectedColumn}
-              onChange={(e) => setSelectedColumn(e.target.value)}
-            >
-              {rightCSV.headers.map(header => (
-                <MenuItem key={header} value={header}>{header}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <Button 
-              variant="contained" 
+        <Box sx={{
+          mt: 4,
+          p: 3,
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'divider'
+        }}>
+          <Typography variant="h5" gutterBottom>
+            Filtering Options
+          </Typography>
+
+          <Box sx={{ mb: 3 }}>
+            <FormControl fullWidth sx={{ minHeight: 56 }}>
+              <InputLabel>Select Column to Filter By</InputLabel>
+              <Select
+                value={selectedColumn}
+                onChange={(e) => setSelectedColumn(e.target.value)}
+                label="Select Column to Filter By"
+              >
+                {rightCSV.headers.map(header => (
+                  <MenuItem key={header} value={header}>
+                    <Box>
+                      <Typography variant="body2" fontWeight="bold">{header}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Click to filter left CSV using this column
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {selectedColumn && (
+              <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+                Filter by column "{selectedColumn}" from right CSV
+              </Typography>
+            )}
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
               color="secondary"
+              size="large"
               onClick={applyFilter}
               disabled={!leftCSV || !selectedColumn}
+              sx={{ minWidth: 140 }}
             >
               Apply Filter
             </Button>
             {filteredData.length > 0 && (
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
+                color="success"
+                size="large"
                 startIcon={<DownloadIcon />}
                 onClick={exportFiltered}
+                sx={{ minWidth: 160 }}
               >
-                Export Filtered CSV
+                Export Filtered CSV ({filteredData.length} rows)
               </Button>
             )}
           </Box>
