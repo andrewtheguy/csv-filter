@@ -67,10 +67,34 @@ function App(): React.JSX.Element {
             return
           }
 
+          // Check for duplicate column names by analyzing the raw header line
+          const lines = result.content.split('\n').filter(line => line.trim())
+          if (lines.length === 0) {
+            setError('CSV file appears to be empty. Please check the file and try again.')
+            setErrorOpen(true)
+            return
+          }
+
+          const headerLine = lines[0]
+          const headers = headerLine.split(',').map(header => header.trim())
+
+          // Allow empty column names since they're excluded from filtering
+
+          // Check for duplicate non-empty column names (allow multiple empty columns since they're excluded from filtering)
+          const duplicateHeaders = headers.filter((header, index) =>
+            header.trim() && headers.indexOf(header) !== index
+          )
+          if (duplicateHeaders.length > 0) {
+            const uniqueDuplicates = [...new Set(duplicateHeaders)]
+            setError(`CSV file contains duplicate column names: ${uniqueDuplicates.join(', ')}. Please fix the file and try again.`)
+            setErrorOpen(true)
+            return
+          }
+
           const filteredData = filterEmptyRows(results.data)
           const csvData: CSVData = {
             data: filteredData,
-            headers: results.meta.fields || []
+            headers: headers
           }
           if (isLeft) {
             setLeftCSV(csvData)

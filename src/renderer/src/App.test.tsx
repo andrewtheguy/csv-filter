@@ -186,5 +186,84 @@ more_data,another_value,third_value
       // The table should not be displayed due to the error
       expect(screen.queryByText('Left CSV - Source')).not.toBeInTheDocument()
     })
+
+    it('shows error when CSV contains duplicate column names', async () => {
+      const csvWithDuplicates = `name,age,name
+John,25,Doe
+Jane,30,Smith`
+
+      ;(window.api.selectFile as jest.Mock).mockResolvedValue({
+        content: csvWithDuplicates,
+        filePath: 'duplicate-columns.csv'
+      })
+
+      render(<App />)
+      const user = userEvent.setup()
+
+      const leftButton = screen.getByText('Load Left CSV (Source)')
+      await user.click(leftButton)
+
+      // Should show error snackbar for duplicate column names
+      await waitFor(() => {
+        expect(screen.getByText('CSV file contains duplicate column names: name. Please fix the file and try again.')).toBeInTheDocument()
+      })
+
+      // The table should not be displayed due to the error
+      expect(screen.queryByText('Left CSV - Source')).not.toBeInTheDocument()
+    })
+
+    it('handles CSV with multiple duplicate column names', async () => {
+      const csvWithMultipleDuplicates = `name,age,age,city,name
+John,25,26,NYC,Doe
+Jane,30,31,LA,Smith`
+
+      ;(window.api.selectFile as jest.Mock).mockResolvedValue({
+        content: csvWithMultipleDuplicates,
+        filePath: 'multiple-duplicate-columns.csv'
+      })
+
+      render(<App />)
+      const user = userEvent.setup()
+
+      const rightButton = screen.getByText('Load Right CSV (Filter)')
+      await user.click(rightButton)
+
+      // Should show error snackbar listing all unique duplicate column names
+      await waitFor(() => {
+        expect(screen.getByText('CSV file contains duplicate column names: age, name. Please fix the file and try again.')).toBeInTheDocument()
+      })
+
+      // The table should not be displayed due to the error
+      expect(screen.queryByText('Right CSV - Filter')).not.toBeInTheDocument()
+    })
+
+
+
+    it('allows multiple empty column names and loads successfully', async () => {
+      const csvWithMultipleEmptyColumns = `name,,,
+John,Doe,Smith,25
+Jane,Doe,Smith,30`
+
+      ;(window.api.selectFile as jest.Mock).mockResolvedValue({
+        content: csvWithMultipleEmptyColumns,
+        filePath: 'multiple-empty-columns.csv'
+      })
+
+      render(<App />)
+      const user = userEvent.setup()
+
+      const rightButton = screen.getByText('Load Right CSV (Filter)')
+      await user.click(rightButton)
+
+      // Should load successfully without error (multiple empty columns are allowed)
+      await waitFor(() => {
+        expect(screen.getByText('Right CSV - Filter: multiple-empty-columns.csv')).toBeInTheDocument()
+      })
+
+      // Should show empty columns as "(Empty column n)" in the table header
+      expect(screen.getByText('(Empty column 2)')).toBeInTheDocument()
+      expect(screen.getByText('(Empty column 3)')).toBeInTheDocument()
+      expect(screen.getByText('(Empty column 4)')).toBeInTheDocument()
+    })
   })
 })
