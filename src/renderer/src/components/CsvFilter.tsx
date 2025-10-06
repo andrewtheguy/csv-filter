@@ -5,7 +5,7 @@ import {
 } from '@mui/material'
 import DownloadIcon from '@mui/icons-material/Download'
 import Papa from 'papaparse'
-import { filterCsvData, CSVRow } from '../utils/csvFilterUtils'
+import { filterCsvData, filterEmptyRows, CSVRow } from '../utils/csvFilterUtils'
 
 interface CSVData {
   data: CSVRow[]
@@ -42,7 +42,8 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
       try {
         const selectedColumn = rightCSV.headers[selectedColumnIndex as number]
         const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn)
-        setFilteredData(filtered)
+        const filteredWithoutEmpty = filterEmptyRows(filtered)
+        setFilteredData(filteredWithoutEmpty)
         setFilteredPage(1) // Reset to first page when filter changes
       } catch (error) {
         const errorMessage = `Failed to apply filter: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -65,7 +66,8 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
 
       const selectedColumn = rightCSV.headers[selectedColumnIndex as number]
       const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn)
-      setFilteredData(filtered)
+      const filteredWithoutEmpty = filterEmptyRows(filtered)
+      setFilteredData(filteredWithoutEmpty)
     } catch (error) {
       const errorMessage = `Failed to apply filter: ${error instanceof Error ? error.message : 'Unknown error'}`
       onError?.(errorMessage)

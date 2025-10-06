@@ -3,6 +3,21 @@ export type CSVRow = {
 }
 
 /**
+ * Filters out rows that are completely empty (all values are empty strings, undefined, or null)
+ * @param data - Array of CSV rows to filter
+ * @returns Filtered array with empty rows removed
+ */
+export function filterEmptyRows(data: CSVRow[]): CSVRow[] {
+  return data.filter(row => {
+    return Object.values(row).some(value =>
+      value !== null &&
+      value !== undefined &&
+      String(value).trim() !== ''
+    )
+  })
+}
+
+/**
  * Filters left CSV data by excluding rows where the specified column matches values in right CSV data.
  * @param leftData - Array of CSV rows from the left CSV file
  * @param rightData - Array of CSV rows from the right CSV file to filter against

@@ -70,10 +70,10 @@ Alice,28,Miami
       expect(screen.getByText('Bob')).toBeInTheDocument()
       expect(screen.getByText('Alice')).toBeInTheDocument()
 
-      // Verify that we have the correct total rows parsed (including rows with empty values like ',,')
-      // Empty line filtering removes truly empty lines (whitespace only), but keeps lines with delimiters
+      // Verify that we have the correct total rows parsed (empty rows are filtered out)
+      // Empty row filtering removes rows where all values are empty strings, null, or undefined
       const tableRows = screen.getAllByRole('row').slice(1) // slice(1) to skip header row
-      expect(tableRows).toHaveLength(6) // 4 data rows + 2 rows with ',,'
+      expect(tableRows).toHaveLength(4) // Only the 4 data rows remain (empty rows filtered out)
 
       // Verify that empty line filtering correctly handles lines with delimiters vs truly empty lines
     })
@@ -101,9 +101,9 @@ more_data,another_value,third_value
 
       await waitFor(() => {
         expect(screen.getByText('Left CSV - Source')).toBeInTheDocument()
-        // Check that we have the correct total rows (data rows + rows with empty values)
+        // Check that we have the correct total rows (empty rows filtered out)
         const tableRows = screen.getAllByRole('row').slice(1) // slice(1) to skip header row
-        expect(tableRows).toHaveLength(3) // data1 row + ,, row + more_data row
+        expect(tableRows).toHaveLength(2) // data1 row + more_data row (empty ,, row filtered out)
       })
 
       expect(screen.getByText('data1')).toBeInTheDocument()

@@ -53,55 +53,37 @@ describe('CsvFilter Component', () => {
     expect(screen.getByText('age')).toBeInTheDocument()
   })
 
-  it('enables Apply Filter button when column is selected and leftCSV exists', () => {
+  it('automatically applies filter when column is selected and leftCSV exists', async () => {
     render(
       <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
     )
 
     const select = screen.getByRole('combobox')
-    const applyButton = screen.getByText('Apply Filter')
 
-    // Initially disabled
-    expect(applyButton).toBeDisabled()
+    // Initially no filtered results
+    expect(screen.queryByText(/Filtered Results:/)).not.toBeInTheDocument()
 
-    // After selecting column, button should be enabled
+    // After selecting column, filter should be automatically applied
     fireEvent.mouseDown(select)
     fireEvent.click(screen.getByText('name'))
 
-    expect(applyButton).toBeEnabled()
+    await waitFor(() => {
+      expect(screen.getByText('Filtered Results (2 rows)')).toBeInTheDocument()
+    })
   })
 
-  it('disables Apply Filter button when leftCSV is null', () => {
+  it('does not show filtered results when leftCSV is null', () => {
     render(
       <CsvFilter leftCSV={null} rightCSV={mockRightCSV} />
     )
 
     const select = screen.getByRole('combobox')
-    const applyButton = screen.getByText('Apply Filter')
 
     fireEvent.mouseDown(select)
     fireEvent.click(screen.getByText('name'))
 
-    expect(applyButton).toBeDisabled()
-  })
-
-  it('correctly filters data by selected column', async () => {
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-    )
-
-    const select = screen.getByRole('combobox')
-    fireEvent.mouseDown(select)
-    fireEvent.click(screen.getByText('name'))
-
-    const applyButton = screen.getByText('Apply Filter')
-    fireEvent.click(applyButton)
-
-    await waitFor(() => {
-      expect(screen.getByText('Filtered Results: 2 rows')).toBeInTheDocument()
-    })
-
-    expect(screen.getByText('Rows from left CSV excluding those that match in selected column from right CSV')).toBeInTheDocument()
+    // No filtered results should appear when leftCSV is null
+    expect(screen.queryByText(/Filtered Results:/)).not.toBeInTheDocument()
   })
 
   it('shows export button after filtering', async () => {
@@ -109,12 +91,10 @@ describe('CsvFilter Component', () => {
       <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
     )
 
-    // Apply filter
+    // Apply filter automatically
     const select = screen.getByRole('combobox')
     fireEvent.mouseDown(select)
     fireEvent.click(screen.getByText('name'))
-
-    fireEvent.click(screen.getByText('Apply Filter'))
 
     await waitFor(() => {
       expect(screen.getByText(/Export Filtered CSV/)).toBeInTheDocument()
@@ -129,12 +109,10 @@ describe('CsvFilter Component', () => {
       <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
     )
 
-    // Apply filter
+    // Apply filter automatically
     const select = screen.getByRole('combobox')
     fireEvent.mouseDown(select)
     fireEvent.click(screen.getByText('name'))
-
-    fireEvent.click(screen.getByText('Apply Filter'))
 
     await waitFor(() => {
       expect(screen.getByText(/Export Filtered CSV/)).toBeInTheDocument()
@@ -167,10 +145,8 @@ describe('CsvFilter Component', () => {
     fireEvent.mouseDown(select)
     fireEvent.click(screen.getByText('name'))
 
-    fireEvent.click(screen.getByText('Apply Filter'))
-
     await waitFor(() => {
-      expect(screen.getByText('Filtered Results: 2 rows')).toBeInTheDocument()
+      expect(screen.getByText('Filtered Results (2 rows)')).toBeInTheDocument()
     })
 
     // Re-render with new CSV data
@@ -186,7 +162,7 @@ describe('CsvFilter Component', () => {
 
     // Filter should be reset
     await waitFor(() => {
-      expect(screen.queryByText('Filtered Results: 2 rows')).not.toBeInTheDocument()
+      expect(screen.queryByText('Filtered Results (2 rows)')).not.toBeInTheDocument()
     })
   })
 
@@ -213,8 +189,6 @@ describe('CsvFilter Component', () => {
     fireEvent.mouseDown(select)
     fireEvent.click(screen.getByText('name'))
 
-    fireEvent.click(screen.getByText('Apply Filter'))
-
     await waitFor(() => {
       expect(mockOnChange).toHaveBeenCalledWith([
         { name: 'Charlie', age: 35, city: 'NY' },
@@ -223,7 +197,7 @@ describe('CsvFilter Component', () => {
     })
   })
 
-  it('handles empty left CSV gracefully', async () => {
+  it('handles empty left CSV gracefully', () => {
     render(
       <CsvFilter
         leftCSV={{ data: [], headers: ['name', 'age'] }}
@@ -235,15 +209,8 @@ describe('CsvFilter Component', () => {
     fireEvent.mouseDown(select)
     fireEvent.click(screen.getByText('name'))
 
-    const applyButton = screen.getByText('Apply Filter')
-    expect(applyButton).toBeEnabled()
-
-    fireEvent.click(applyButton)
-
-    // Empty CSV should result in 0 filtered results, so no results paper should show
-    await waitFor(() => {
-      expect(screen.queryByText(/Filtered Results:/)).not.toBeInTheDocument()
-    })
+    // Empty CSV should result in 0 filtered results
+    expect(screen.queryByText(/Filtered Results:/)).not.toBeInTheDocument()
   })
 
   it('handles column not existing in left CSV', async () => {
@@ -260,43 +227,32 @@ describe('CsvFilter Component', () => {
     fireEvent.mouseDown(select)
     fireEvent.click(screen.getByText('missingColumn'))
 
-    fireEvent.click(screen.getByText('Apply Filter'))
-
     // Should still filter based on existing values, undefined is not in Set
     await waitFor(() => {
-      expect(screen.getByText('Filtered Results: 4 rows')).toBeInTheDocument()
+      expect(screen.getByText('Filtered Results (4 rows)')).toBeInTheDocument()
     })
   })
 
-  it('handles filtering multiple calls correctly', async () => {
-    const multipleFilterRightCSV = {
+  it('handles filtering when switching columns', async () => {
+    const filterByAgeRightCSV = {
       data: [
-        { city: 'NY' },
-        { city: 'LA' }
+        { age: 25 },
+        { age: 30 }
       ],
-      headers: ['city']
+      headers: ['age']
     }
 
     render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={multipleFilterRightCSV} />
+      <CsvFilter leftCSV={mockLeftCSV} rightCSV={filterByAgeRightCSV} />
     )
 
-    // First filter by city
+    // First filter by age (should exclude Alice and Bob)
     const select = screen.getByRole('combobox')
     fireEvent.mouseDown(select)
-    fireEvent.click(screen.getByText('city'))
-
-    fireEvent.click(screen.getByText('Apply Filter'))
+    fireEvent.click(screen.getByText('age'))
 
     await waitFor(() => {
-      expect(screen.getByText('Filtered Results: 1 rows')).toBeInTheDocument() // Only Diana in Chicago
-    })
-
-    // Apply same filter again - should not change
-    fireEvent.click(screen.getByText('Apply Filter'))
-
-    await waitFor(() => {
-      expect(screen.getByText('Filtered Results: 1 rows')).toBeInTheDocument()
+      expect(screen.getByText('Filtered Results (2 rows)')).toBeInTheDocument() // Charlie and Diana
     })
   })
 

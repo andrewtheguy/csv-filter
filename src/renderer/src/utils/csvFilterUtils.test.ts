@@ -1,4 +1,4 @@
-import { filterCsvData } from './csvFilterUtils'
+import { filterCsvData, filterEmptyRows } from './csvFilterUtils'
 
 const mockLeftData = [
   { name: 'Alice', age: 25, city: 'NY' },
@@ -170,5 +170,121 @@ describe('filterCsvData', () => {
     expect(result).toEqual([
       { id: 2 }
     ])
+  })
+})
+
+describe('filterEmptyRows', () => {
+  it('returns the same array when no empty rows exist', () => {
+    const data = [
+      { name: 'Alice', age: 25 },
+      { name: 'Bob', age: 30 }
+    ]
+
+    const result = filterEmptyRows(data)
+    expect(result).toEqual(data)
+    expect(result).not.toBe(data) // Should return a new array
+  })
+
+  it('filters out rows where all values are empty strings', () => {
+    const data = [
+      { name: 'Alice', age: 25 },
+      { name: '', age: '', city: '' },
+      { name: 'Bob', age: 30 }
+    ]
+
+    const result = filterEmptyRows(data)
+    expect(result).toEqual([
+      { name: 'Alice', age: 25 },
+      { name: 'Bob', age: 30 }
+    ])
+  })
+
+  it('filters out rows where all values are null or undefined', () => {
+    const data = [
+      { name: 'Alice', age: 25 },
+      { name: null, age: null, city: null },
+      { name: 'Bob', age: 30 }
+    ]
+
+    const result = filterEmptyRows(data)
+    expect(result).toEqual([
+      { name: 'Alice', age: 25 },
+      { name: 'Bob', age: 30 }
+    ])
+  })
+
+  it('filters out rows where all values are undefined', () => {
+    const data = [
+      { name: 'Alice', age: 25 },
+      { name: undefined, age: undefined },
+      { name: 'Bob', age: 30 }
+    ]
+
+    const result = filterEmptyRows(data)
+    expect(result).toEqual([
+      { name: 'Alice', age: 25 },
+      { name: 'Bob', age: 30 }
+    ])
+  })
+
+  it('filters out rows with mixed empty values', () => {
+    const data = [
+      { name: 'Alice', age: 25 },
+      { name: '', age: null, city: undefined },
+      { name: '   ', age: 0 }, // This should not be filtered as age: 0 is not empty
+      { name: 'Bob', age: 30 }
+    ]
+
+    const result = filterEmptyRows(data)
+    expect(result).toEqual([
+      { name: 'Alice', age: 25 },
+      { name: '   ', age: 0 },
+      { name: 'Bob', age: 30 }
+    ])
+  })
+
+  it('handles rows with whitespace-only strings as empty', () => {
+    const data = [
+      { name: 'Alice', age: 25 },
+      { name: '   ', age: '', city: '\t' },
+      { name: 'Bob', age: 30 }
+    ]
+
+    const result = filterEmptyRows(data)
+    expect(result).toEqual([
+      { name: 'Alice', age: 25 },
+      { name: 'Bob', age: 30 }
+    ])
+  })
+
+  it('handles numeric zero values as non-empty', () => {
+    const data = [
+      { name: 'Alice', age: 25 },
+      { name: '', age: 0 },
+      { name: 'Bob', age: 30 }
+    ]
+
+    const result = filterEmptyRows(data)
+    expect(result).toEqual([
+      { name: 'Alice', age: 25 },
+      { name: '', age: 0 }, // Zero is a valid value
+      { name: 'Bob', age: 30 }
+    ])
+  })
+
+  it('returns empty array when all rows are empty', () => {
+    const data = [
+      { name: '', age: null },
+      { city: undefined, zip: '' },
+      { title: null, description: undefined }
+    ]
+
+    const result = filterEmptyRows(data)
+    expect(result).toEqual([])
+  })
+
+  it('returns empty array for empty input', () => {
+    const result = filterEmptyRows([])
+    expect(result).toEqual([])
   })
 })

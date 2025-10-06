@@ -7,10 +7,7 @@ import {
 } from '@mui/material'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import CsvFilter from './components/CsvFilter'
-
-interface CSVRow {
-  [key: string]: string | number
-}
+import { filterEmptyRows, CSVRow } from './utils/csvFilterUtils'
 
 interface CSVData {
   data: CSVRow[]
@@ -70,8 +67,9 @@ function App(): React.JSX.Element {
             return
           }
 
+          const filteredData = filterEmptyRows(results.data)
           const csvData: CSVData = {
-            data: results.data,
+            data: filteredData,
             headers: results.meta.fields || []
           }
           if (isLeft) {
