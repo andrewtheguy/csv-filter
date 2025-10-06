@@ -162,7 +162,7 @@ function App(): React.JSX.Element {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 'xl', mx: 'auto' }}>
+    <Box sx={{ p: 3, maxWidth: 'xl', mx: 'auto', height: '100vh', overflow: 'auto' }}>
       <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
         CSV Filter
       </Typography>
