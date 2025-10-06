@@ -172,7 +172,7 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
           <Typography variant="body1" sx={{ mb: 2, fontSize: '0.875rem', fontWeight: 500 }}>
             Filtered Results ({filteredData.length} rows)
           </Typography>
-          <TableContainer sx={{ maxHeight: 300 }}>
+          <TableContainer sx={{ maxHeight: 300, overflowX: 'auto' }}>
             <Table stickyHeader size="small">
               <TableHead>
                 <TableRow>
