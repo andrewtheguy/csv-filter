@@ -22,12 +22,12 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
   rightCSV,
   onFilteredDataChange
 }) => {
-  const [selectedColumn, setSelectedColumn] = useState<string>('')
+  const [selectedColumnIndex, setSelectedColumnIndex] = useState<number | ''>('')
   const [filteredData, setFilteredData] = useState<CSVRow[]>([])
 
   // Reset filter when CSV data changes
   useEffect(() => {
-    setSelectedColumn('')
+    setSelectedColumnIndex('')
     setFilteredData([])
   }, [leftCSV, rightCSV])
 
@@ -37,8 +37,9 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
   }, [filteredData, onFilteredDataChange])
 
   const applyFilter = () => {
-    if (!leftCSV || !rightCSV || !selectedColumn) return
+    if (!leftCSV || !rightCSV || selectedColumnIndex === '') return
 
+    const selectedColumn = rightCSV.headers[selectedColumnIndex as number]
     const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn)
     setFilteredData(filtered)
   }
@@ -56,57 +57,54 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
 
   return (
     <Box sx={{
-      mt: 4,
-      p: 3,
+      mt: 2,
+      p: 2,
       bgcolor: 'background.paper',
       borderRadius: 2,
       border: '1px solid',
       borderColor: 'divider'
     }}>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
         Filtering Options
       </Typography>
 
-      <Box sx={{ mb: 3 }}>
-        <FormControl fullWidth sx={{ minHeight: 56 }}>
+      <Box sx={{ mb: 2 }}>
+        <FormControl fullWidth>
           <InputLabel id="column-select-label">Select Column to Filter By</InputLabel>
           <Select
             labelId="column-select-label"
             id="column-select"
-            value={selectedColumn}
-            onChange={(e) => setSelectedColumn(e.target.value)}
+            value={selectedColumnIndex}
+            onChange={(e) => setSelectedColumnIndex(Number(e.target.value))}
             label="Select Column to Filter By"
           >
             {rightCSV.headers.map((header, index) => {
               const displayText = !header.trim() ? `(Empty column ${index + 1})` : header
               return (
-                <MenuItem key={index} value={header}>
-                  <Box>
-                    <Typography variant="body2" fontWeight="bold">{displayText}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {header.trim() ? 'Click to filter left CSV using this column' : `Filter using column ${index + 1}`}
-                    </Typography>
-                  </Box>
+                <MenuItem key={index} value={index}>
+                  <Typography variant="body2">{displayText}</Typography>
                 </MenuItem>
               )
             })}
           </Select>
         </FormControl>
-        {selectedColumn && (
-          <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-            Filter by column "{selectedColumn}" from right CSV
+        {selectedColumnIndex !== '' && (
+          <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary', fontSize: '0.875rem' }}>
+            {rightCSV.headers[selectedColumnIndex as number].trim() === ''
+              ? `Filter using column ${(selectedColumnIndex as number) + 1}`
+              : `Filter by column "${rightCSV.headers[selectedColumnIndex as number]}" from right CSV`
+            }
           </Typography>
         )}
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
         <Button
           variant="contained"
           color="secondary"
-          size="large"
+          size="medium"
           onClick={applyFilter}
-          disabled={!leftCSV || !selectedColumn}
-          sx={{ minWidth: 140 }}
+          disabled={!leftCSV || selectedColumnIndex === ''}
         >
           Apply Filter
         </Button>
@@ -114,10 +112,9 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
           <Button
             variant="contained"
             color="success"
-            size="large"
+            size="medium"
             startIcon={<DownloadIcon />}
             onClick={exportFiltered}
-            sx={{ minWidth: 160 }}
           >
             Export Filtered CSV ({filteredData.length} rows)
           </Button>
@@ -125,8 +122,8 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
       </Box>
 
       {filteredData.length > 0 && (
-        <Paper sx={{ mt: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
+        <Paper sx={{ mt: 2, p: 1.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
             Filtered Results: {filteredData.length} rows
           </Typography>
           <Typography variant="body2" color="text.secondary">
