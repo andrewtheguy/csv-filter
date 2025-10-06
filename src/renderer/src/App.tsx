@@ -22,6 +22,30 @@ function App(): React.JSX.Element {
   const [rightCSV, setRightCSV] = useState<CSVData | null>(null)
   const [leftPage, setLeftPage] = useState(1)
   const [rightPage, setRightPage] = useState(1)
+  const [leftFilePath, setLeftFilePath] = useState<string | null>(null)
+  const [rightFilePath, setRightFilePath] = useState<string | null>(null)
+
+  const truncatePath = (path: string, maxLength: number = 50): string => {
+    if (path.length <= maxLength) return path
+
+    const fileName = path.split('/').pop() || ''
+    const pathWithoutFile = path.substring(0, path.lastIndexOf('/'))
+
+    if (pathWithoutFile.length === 0) return `.../${fileName}`
+
+    // Reserve space for start + "..." + "/" + filename
+    const startLength = Math.floor((maxLength - fileName.length - 4) / 2)
+
+    let start = pathWithoutFile.substring(0, startLength)
+    let end = pathWithoutFile.substring(pathWithoutFile.length - startLength)
+
+    // If we have enough space, show full path without truncation
+    if (pathWithoutFile.length <= maxLength - fileName.length - 1) {
+      return path
+    }
+
+    return `${start}...${end}/${fileName}`
+  }
 
   const handleFileUpload = async (isLeft: boolean) => {
     const result = await window.api.selectFile()
@@ -37,16 +61,19 @@ function App(): React.JSX.Element {
         }
         if (isLeft) {
           setLeftCSV(csvData)
+          setLeftFilePath(result.filePath)
           setLeftPage(1) // Reset to first page when new data is loaded
         } else {
           setRightCSV(csvData)
+          setRightFilePath(result.filePath)
           setRightPage(1) // Reset to first page when new data is loaded
         }
       }
     })
   }
 
-  const renderTable = (data: CSVData | null, title: string, currentPage: number, onPageChange: (event: React.ChangeEvent<unknown>, page: number) => void) => {
+  const renderTable = (data: CSVData | null, title: string, filePath: string | null, currentPage: number, onPageChange: (event: React.ChangeEvent<unknown>, page: number) => void) => {
+    const displayTitle = filePath ? `${title}: ${truncatePath(filePath)}` : title
     if (!data || data.data.length === 0) {
       return (
         <Paper sx={{ p: 2, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -71,7 +98,7 @@ function App(): React.JSX.Element {
 
     return (
       <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>{title}</Typography>
+        <Typography variant="body1" sx={{ mb: 2, fontSize: '0.875rem', fontWeight: 500 }}>{displayTitle}</Typography>
         <TableContainer sx={{ maxHeight: 300 }}>
           <Table stickyHeader size="small">
             <TableHead>
@@ -129,7 +156,7 @@ function App(): React.JSX.Element {
               Load Left CSV (Source)
             </Button>
           </Box>
-          {renderTable(leftCSV, "Left CSV - Source", leftPage, (_event, page) => setLeftPage(page))}
+          {renderTable(leftCSV, "Left CSV - Source", leftFilePath, leftPage, (_event, page) => setLeftPage(page))}
         </Grid>
 
         <Grid size={6}>
@@ -143,7 +170,7 @@ function App(): React.JSX.Element {
               Load Right CSV (Filter)
             </Button>
           </Box>
-          {renderTable(rightCSV, "Right CSV - Filter", rightPage, (_event, page) => setRightPage(page))}
+          {renderTable(rightCSV, "Right CSV - Filter", rightFilePath, rightPage, (_event, page) => setRightPage(page))}
         </Grid>
       </Grid>
       
