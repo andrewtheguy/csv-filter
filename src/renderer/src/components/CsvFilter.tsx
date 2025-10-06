@@ -16,6 +16,7 @@ interface CSVData {
 export interface CsvFilterProps {
   leftCSV: CSVData | null
   rightCSV: CSVData | null
+  leftFileName?: string | null
   onFilteredDataChange?: (filteredData: CSVRow[]) => void
   onError?: (error: string) => void
 }
@@ -23,6 +24,7 @@ export interface CsvFilterProps {
 const CsvFilter: React.FC<CsvFilterProps> = ({
   leftCSV,
   rightCSV,
+  leftFileName,
   onFilteredDataChange,
   onError
 }) => {
@@ -67,7 +69,15 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
       if (!leftCSV || filteredData.length === 0) return
 
       const csvString = Papa.unparse(filteredData)
-      await window.api.saveFile(csvString)
+      let suggestedFilename = 'filtered.csv'
+
+      if (leftFileName) {
+        // Extract filename without extension from leftFileName
+        const fileNameWithoutExt = leftFileName.replace(/\.csv$/i, '')
+        suggestedFilename = `${fileNameWithoutExt}_filtered.csv`
+      }
+
+      await window.api.saveFileWithName(csvString, suggestedFilename)
     } catch (error) {
       const errorMessage = `Failed to export filtered CSV: ${error instanceof Error ? error.message : 'Unknown error'}`
       onError?.(errorMessage)

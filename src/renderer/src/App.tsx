@@ -219,10 +219,15 @@ function App(): React.JSX.Element {
         </Grid>
       </Grid>
       
-      <CsvFilter leftCSV={leftCSV} rightCSV={rightCSV} onError={(error) => {
-        setError(error)
-        setErrorOpen(true)
-      }} />
+      <CsvFilter
+        leftCSV={leftCSV}
+        rightCSV={rightCSV}
+        leftFileName={leftFilePath ? leftFilePath.split('/').pop() || null : null}
+        onError={(error) => {
+          setError(error)
+          setErrorOpen(true)
+        }}
+      />
 
       <Snackbar
         open={errorOpen}

@@ -100,9 +100,9 @@ describe('CsvFilter Component', () => {
     })
   })
 
-  it('calls saveFile on export button click', async () => {
-    const mockSaveFile = jest.fn()
-    window.api.saveFile = mockSaveFile
+  it('calls saveFileWithName on export button click', async () => {
+    const mockSaveFileWithName = jest.fn()
+    window.api.saveFileWithName = mockSaveFileWithName
 
     render(
       <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
@@ -120,7 +120,7 @@ describe('CsvFilter Component', () => {
     const exportButton = screen.getByText(/Export Filtered CSV/)
     fireEvent.click(exportButton)
 
-    expect(mockSaveFile).toHaveBeenCalledTimes(1)
+    expect(mockSaveFileWithName).toHaveBeenCalledTimes(1)
   })
 
 

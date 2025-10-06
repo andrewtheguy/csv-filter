@@ -82,6 +82,19 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.handle('save-file-with-name', async (_, content: string, suggestedName: string) => {
+    const result = await dialog.showSaveDialog({
+      filters: [
+        { name: 'CSV Files', extensions: ['csv'] },
+      ],
+      defaultPath: suggestedName
+    })
+    if (!result.canceled && result.filePath) {
+      const fs = require('fs/promises')
+      await fs.writeFile(result.filePath, content, 'utf-8')
+    }
+  })
+
   createWindow()
 
   app.on('activate', function () {
