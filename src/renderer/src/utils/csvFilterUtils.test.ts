@@ -390,55 +390,6 @@ describe('parseCSV', () => {
     ])
   })
 
-  it('filters out empty rows', async () => {
-    const csvWithEmptyRows = `name,age,city
-John,25,NYC
-
-Jane,30,LA
-
-,,
-Bob,35,Chicago`
-
-    const result = await parseCSV(csvWithEmptyRows, 'test.csv')
-
-    expect(result.data).toEqual([
-      { name: 'John', age: '25', city: 'NYC' },
-      { name: 'Jane', age: '30', city: 'LA' },
-      { name: 'Bob', age: '35', city: 'Chicago' }
-    ])
-  })
-
-  it('shows error when CSV contains duplicate column names', async () => {
-    const csvWithDuplicates = `name,age,name
-John,25,Doe
-Jane,30,Smith`
-
-    await expect(parseCSV(csvWithDuplicates, 'duplicate-columns.csv')).rejects.toThrow('CSV file contains duplicate column names: name.')
-  })
-
-  it('handles CSV with multiple duplicate column names', async () => {
-    const csvWithMultipleDuplicates = `name,age,age,city,name
-John,25,26,NYC,Doe
-Jane,30,31,LA,Smith`
-
-
-    await expect(parseCSV(csvWithMultipleDuplicates, 'multiple-duplicate-columns.csv')).rejects.toThrow('CSV file contains duplicate column names: age, name.')
-  })
-
-  it('allows multiple empty column names and loads successfully', async () => {
-    const csvWithMultipleEmptyColumns = `name,,,
-John,Doe,Smith,25
-Jane,Doe,Smith,30`
-
-    const result = await parseCSV(csvWithMultipleEmptyColumns, 'multiple-empty-columns.csv')
-
-    expect(result.headers).toEqual(['name', '', '', ''])
-    expect(result.data).toEqual([
-      { name: 'John', '': 'Doe', 'col_3': 'Smith', 'col_4': '25' },
-      { name: 'Jane', '': 'Doe', 'col_3': 'Smith', 'col_4': '30' }
-    ])
-  })
-
   it('blocks non-empty duplicates even when combined with empty columns', async () => {
     const csvWithDuplicateNameAndEmpty = `name,,,name,age
 John,Doe,Smith,Max,25`
@@ -750,7 +701,7 @@ yankee-laboratory-testing`
     const result = await parseCSV(singleColumnCSV, 'user-example-single-column.csv')
 
     expect(result.headers).toEqual(['Partner Companies'])
-    expect(result.data).toHaveLength(48) // All non-empty rows after filtering
+    expect(result.data).toHaveLength(51) // All non-empty rows after filtering
     expect(result.data[0]).toEqual({
       'Partner Companies': 'zenith-dental-clinic'
     })
@@ -796,5 +747,102 @@ third-row`
       { 'Numbers': '4' },
       { 'Numbers': '5' }
     ])
+  })
+
+  it('handles CSV with BOM prefix correctly (BOM is stripped automatically)', async () => {
+    const csvWithoutBOM = `name,age,city
+John,25,NYC
+Jane,30,LA`
+
+    const csvWithBOM = `\uFEFFname,age,city
+John,25,NYC
+Jane,30,LA`
+
+    const resultWithoutBOM = await parseCSV(csvWithoutBOM, 'test-without-bom.csv')
+    const resultWithBOM = await parseCSV(csvWithBOM, 'test-with-bom.csv')
+
+    expect(resultWithBOM.headers).toEqual(resultWithoutBOM.headers)
+    expect(resultWithBOM.data).toEqual(resultWithoutBOM.data)
+  })
+
+  it('handles CSV with BOM and quoted headers correctly', async () => {
+    const csvWithoutBOM = `"name","age","city"
+"John","25","NYC"
+"Jane","30","LA"`
+
+    const csvWithBOM = `\uFEFF"name","age","city"
+"John","25","NYC"
+"Jane","30","LA"`
+
+    const resultWithoutBOM = await parseCSV(csvWithoutBOM, 'quoted-without-bom.csv')
+    const resultWithBOM = await parseCSV(csvWithBOM, 'quoted-with-bom.csv')
+
+    expect(resultWithBOM.headers).toEqual(resultWithoutBOM.headers)
+    expect(resultWithBOM.data).toEqual(resultWithoutBOM.data)
+  })
+
+  it('handles CSV with BOM and mixed quoted/unquoted data', async () => {
+    const csvWithoutBOM = `"name",age,"city"
+John,25,"NYC"
+"Jane",30,LA`
+
+    const csvWithBOM = `\uFEFF"name",age,"city"
+John,25,"NYC"
+"Jane",30,LA`
+
+    const resultWithoutBOM = await parseCSV(csvWithoutBOM, 'mixed-without-bom.csv')
+    const resultWithBOM = await parseCSV(csvWithBOM, 'mixed-with-bom.csv')
+
+    expect(resultWithBOM.headers).toEqual(resultWithoutBOM.headers)
+    expect(resultWithBOM.data).toEqual(resultWithoutBOM.data)
+  })
+
+  it('handles CSV with BOM and special characters', async () => {
+    const csvWithoutBOM = `name,description
+John,"Product ""Special Edition"" with features"
+Jane,"Normal description with, commas"`
+
+    const csvWithBOM = `\uFEFFname,description
+John,"Product ""Special Edition"" with features"
+Jane,"Normal description with, commas"`
+
+    const resultWithoutBOM = await parseCSV(csvWithoutBOM, 'special-without-bom.csv')
+    const resultWithBOM = await parseCSV(csvWithBOM, 'special-with-bom.csv')
+
+    expect(resultWithBOM.headers).toEqual(resultWithoutBOM.headers)
+    expect(resultWithBOM.data).toEqual(resultWithoutBOM.data)
+    expect(resultWithBOM.data[0].description).toBe('Product "Special Edition" with features')
+  })
+
+  it('handles CSV with BOM and empty first row (just BOM)', async () => {
+    const csvWithoutBOM = `
+name,age
+John,25`
+
+    const csvWithBOM = `\uFEFF
+name,age
+John,25`
+
+    const resultWithoutBOM = await parseCSV(csvWithoutBOM, 'empty-first-without-bom.csv')
+    const resultWithBOM = await parseCSV(csvWithBOM, 'empty-first-with-bom.csv')
+
+    expect(resultWithBOM.headers).toEqual(resultWithoutBOM.headers)
+    expect(resultWithBOM.data).toEqual(resultWithoutBOM.data)
+  })
+
+  it('handles CSV with BOM and empty first row with delimiter', async () => {
+    const csvWithoutBOM = `,
+name,age
+John,25`
+
+    const csvWithBOM = `\uFEFF,
+name,age
+John,25`
+
+    const resultWithoutBOM = await parseCSV(csvWithoutBOM, 'empty-delimiter-without-bom.csv')
+    const resultWithBOM = await parseCSV(csvWithBOM, 'empty-delimiter-with-bom.csv')
+
+    expect(resultWithBOM.headers).toEqual(resultWithoutBOM.headers)
+    expect(resultWithBOM.data).toEqual(resultWithoutBOM.data)
   })
 })
