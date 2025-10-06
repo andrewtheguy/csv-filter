@@ -171,6 +171,52 @@ describe('filterCsvData', () => {
       { id: 2 }
     ])
   })
+
+  it('includes only matching rows when mode is "include"', () => {
+    const result = filterCsvData(mockLeftData, mockRightData, 'name', 'include')
+
+    expect(result).toEqual([
+      { name: 'Alice', age: 25, city: 'NY' },
+      { name: 'Bob', age: 30, city: 'LA' }
+    ])
+  })
+
+  it('excludes matching rows by default (backwards compatibility)', () => {
+    const result = filterCsvData(mockLeftData, mockRightData, 'name', 'exclude')
+
+    expect(result).toEqual([
+      { name: 'Charlie', age: 35, city: 'NY' },
+      { name: 'Diana', age: 28, city: 'Chicago' }
+    ])
+  })
+
+  it('returns only matching rows with include mode for different columns', () => {
+    const result = filterCsvData(mockLeftData, mockRightData, 'age', 'include')
+
+    expect(result).toEqual([
+      { name: 'Alice', age: 25, city: 'NY' },
+      { name: 'Bob', age: 30, city: 'LA' }
+    ])
+  })
+
+  it('returns empty array with include mode when no matches', () => {
+    const leftData = [
+      { name: 'Eve', age: 22 }
+    ]
+
+    const result = filterCsvData(leftData, mockRightData, 'name', 'include')
+
+    expect(result).toEqual([])
+  })
+
+  it('maintains backwards compatibility with default exclude mode', () => {
+    const result = filterCsvData(mockLeftData, mockRightData, 'name')
+
+    expect(result).toEqual([
+      { name: 'Charlie', age: 35, city: 'NY' },
+      { name: 'Diana', age: 28, city: 'Chicago' }
+    ])
+  })
 })
 
 describe('filterEmptyRows', () => {

@@ -315,4 +315,136 @@ describe('CsvFilter Component', () => {
       expect(screen.getByText('(Empty column 3)')).toBeInTheDocument()
     })
   })
+
+  describe('Filter Mode Functionality', () => {
+    it('renders filter mode radio buttons', () => {
+      render(
+        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
+      )
+
+      expect(screen.getByText('Filter Mode')).toBeInTheDocument()
+      expect(screen.getByLabelText('Exclude')).toBeInTheDocument()
+      expect(screen.getByLabelText('Include')).toBeInTheDocument()
+    })
+
+    it('defaults to exclude mode', () => {
+      render(
+        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
+      )
+
+      const excludeRadio = screen.getByLabelText('Exclude') as HTMLInputElement
+      const includeRadio = screen.getByLabelText('Include') as HTMLInputElement
+
+      expect(excludeRadio.checked).toBe(true)
+      expect(includeRadio.checked).toBe(false)
+    })
+
+    it('applies exclude filter by default', async () => {
+      render(
+        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
+      )
+
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+      fireEvent.click(screen.getByText('name'))
+
+      await waitFor(() => {
+        // Should exclude Alice and Bob (rows 0 and 1), showing Charlie and Diana (rows 2 and 3)
+        expect(screen.getByText('Filtered Results (2 rows)')).toBeInTheDocument()
+      })
+    })
+
+    it('applies include filter when include mode is selected', async () => {
+      render(
+        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
+      )
+
+      // Select include mode
+      const includeRadio = screen.getByLabelText('Include')
+      fireEvent.click(includeRadio)
+
+      // Select column to filter
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+      fireEvent.click(screen.getByText('name'))
+
+      await waitFor(() => {
+        // Should include only Alice and Bob (2 rows match), excluding Charlie and Diana
+        expect(screen.getByText('Filtered Results (2 rows)')).toBeInTheDocument()
+      })
+    })
+
+    it('automatically updates filter results when switching filter modes', async () => {
+      render(
+        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
+      )
+
+      // First select column and get exclude results
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+      fireEvent.click(screen.getByText('name'))
+
+      await waitFor(() => {
+        expect(screen.getByText('Filtered Results (2 rows)')).toBeInTheDocument()
+      })
+
+      // Switch to include mode
+      const includeRadio = screen.getByLabelText('Include')
+      fireEvent.click(includeRadio)
+
+      await waitFor(() => {
+        // Results should remain the same (2 rows) but now the included data is different
+        expect(screen.getByText('Filtered Results (2 rows)')).toBeInTheDocument()
+      })
+    })
+
+    it('shows appropriate feedback message for exclude mode when no results', async () => {
+      const leftDataWithNoMatches = {
+        data: [
+          { name: 'Alice', age: 25 },
+          { name: 'Bob', age: 30 }
+        ],
+        headers: ['name', 'age']
+      }
+
+      render(
+        <CsvFilter leftCSV={leftDataWithNoMatches} rightCSV={mockRightCSV} />
+      )
+
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+      fireEvent.click(screen.getByText('name'))
+
+      await waitFor(() => {
+        expect(screen.getByText('No matching rows found. The filter excluded all rows from the left CSV based on the selected column from the right CSV.')).toBeInTheDocument()
+      })
+    })
+
+    it('shows appropriate feedback message for include mode when no results', async () => {
+      const leftDataWithNoMatches = {
+        data: [
+          { name: 'Eve', age: 22 },
+          { name: 'Frank', age: 30 }
+        ],
+        headers: ['name', 'age']
+      }
+
+      render(
+        <CsvFilter leftCSV={leftDataWithNoMatches} rightCSV={mockRightCSV} />
+      )
+
+      // Select include mode
+      const includeRadio = screen.getByLabelText('Include')
+      fireEvent.click(includeRadio)
+
+      // Select column
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+      fireEvent.click(screen.getByText('name'))
+
+      await waitFor(() => {
+        expect(screen.getByText('No matching rows found. No rows from the left CSV matched the values in the selected column from the right CSV.')).toBeInTheDocument()
+      })
+    })
+  })
 })

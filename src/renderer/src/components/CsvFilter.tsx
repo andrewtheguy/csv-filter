@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import {
   Box, Button, Select, MenuItem, FormControl, InputLabel, Typography, Paper,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination,
+  RadioGroup, FormControlLabel, Radio
 } from '@mui/material'
 import DownloadIcon from '@mui/icons-material/Download'
 import Papa from 'papaparse'
-import { filterCsvData, filterEmptyRows, CSVRow } from '../utils/csvFilterUtils'
+import { filterCsvData, filterEmptyRows, CSVRow, FilterMode } from '../utils/csvFilterUtils'
 
 interface CSVData {
   data: CSVRow[]
@@ -26,6 +27,7 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
   onError
 }) => {
   const [selectedColumnIndex, setSelectedColumnIndex] = useState<number | ''>('')
+  const [filterMode, setFilterMode] = useState<FilterMode>('exclude')
   const [filteredData, setFilteredData] = useState<CSVRow[]>([])
   const [filteredPage, setFilteredPage] = useState(1)
 
@@ -36,12 +38,12 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
     setFilteredPage(1)
   }, [leftCSV, rightCSV])
 
-  // Auto-apply filter when column selection changes
+  // Auto-apply filter when column selection or filter mode changes
   useEffect(() => {
     if (leftCSV && rightCSV && selectedColumnIndex !== '') {
       try {
         const selectedColumn = rightCSV.headers[selectedColumnIndex as number]
-        const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn)
+        const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn, filterMode)
         const filteredWithoutEmpty = filterEmptyRows(filtered)
         setFilteredData(filteredWithoutEmpty)
         setFilteredPage(1) // Reset to first page when filter changes
@@ -53,7 +55,7 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
       setFilteredData([])
       setFilteredPage(1)
     }
-  }, [leftCSV, rightCSV, selectedColumnIndex, onError])
+  }, [leftCSV, rightCSV, selectedColumnIndex, filterMode, onError])
 
   // Notify parent component of filtered data changes
   useEffect(() => {
@@ -65,7 +67,7 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
       if (!leftCSV || !rightCSV || selectedColumnIndex === '') return
 
       const selectedColumn = rightCSV.headers[selectedColumnIndex as number]
-      const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn)
+      const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn, filterMode)
       const filteredWithoutEmpty = filterEmptyRows(filtered)
       setFilteredData(filteredWithoutEmpty)
     } catch (error) {
@@ -99,7 +101,28 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
       border: '1px solid',
       borderColor: 'divider'
     }}>
-
+      {/* Filter Mode Selection */}
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="body1" sx={{ mb: 1, fontWeight: 500, color: 'text.primary' }}>
+          Filter Mode
+        </Typography>
+        <RadioGroup
+          row
+          value={filterMode}
+          onChange={(e) => setFilterMode(e.target.value as FilterMode)}
+        >
+          <FormControlLabel
+            value="exclude"
+            control={<Radio />}
+            label={<Typography sx={{ color: 'text.primary' }}>Exclude</Typography>}
+          />
+          <FormControlLabel
+            value="include"
+            control={<Radio />}
+            label={<Typography sx={{ color: 'text.primary' }}>Include</Typography>}
+          />
+        </RadioGroup>
+      </Box>
 
       <Box sx={{ mb: 2 }}>
         <FormControl fullWidth>
@@ -126,7 +149,10 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
       {selectedColumnIndex !== '' && filteredData.length === 0 && leftCSV && (
         <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
           <Typography variant="body2" color="text.secondary">
-            No matching rows found. The filter excluded all rows from the left CSV based on the selected column from the right CSV.
+            {filterMode === 'exclude'
+              ? 'No matching rows found. The filter excluded all rows from the left CSV based on the selected column from the right CSV.'
+              : 'No matching rows found. No rows from the left CSV matched the values in the selected column from the right CSV.'
+            }
           </Typography>
         </Box>
       )}

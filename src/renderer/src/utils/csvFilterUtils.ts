@@ -17,18 +17,22 @@ export function filterEmptyRows(data: CSVRow[]): CSVRow[] {
   })
 }
 
+export type FilterMode = 'exclude' | 'include'
+
 /**
- * Filters left CSV data by excluding rows where the specified column matches values in right CSV data.
+ * Filters left CSV data based on values in right CSV data.
  * @param leftData - Array of CSV rows from the left CSV file
  * @param rightData - Array of CSV rows from the right CSV file to filter against
  * @param column - The column name to filter on
+ * @param mode - Filter mode: 'exclude' (remove matching rows) or 'include' (keep only matching rows)
  * @returns Filtered array of CSV rows
  * @throws Error if data validation fails
  */
 export function filterCsvData(
   leftData: CSVRow[],
   rightData: CSVRow[],
-  column: string
+  column: string,
+  mode: FilterMode = 'exclude'
 ): CSVRow[] {
   // Validate input data
   if (!Array.isArray(leftData)) {
@@ -62,5 +66,11 @@ export function filterCsvData(
 
   const rightValues = new Set(rightData.map(row => row[column] || undefined))
 
-  return leftData.filter(row => !rightValues.has(row[column] || undefined))
+  if (mode === 'include') {
+    // Include only rows that have matching values
+    return leftData.filter(row => rightValues.has(row[column] || undefined))
+  } else {
+    // Exclude rows that have matching values (default behavior)
+    return leftData.filter(row => !rightValues.has(row[column] || undefined))
+  }
 }
