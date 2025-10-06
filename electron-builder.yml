@@ -20,7 +20,7 @@ nsis:
   createDesktopShortcut: always
 mac:
   target: dmg
-  # disable code signing for now
+  # uncomment to disable code signing for now
   identity: null
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
