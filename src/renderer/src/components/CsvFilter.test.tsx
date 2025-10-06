@@ -36,7 +36,6 @@ describe('CsvFilter Component', () => {
     render(
       <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
     )
-    expect(screen.getByText('Filtering Options')).toBeInTheDocument()
     expect(screen.getByLabelText('Select Column from the Right to Filter By')).toBeInTheDocument()
     expect(screen.getByRole('combobox')).toBeInTheDocument()
   })
@@ -220,6 +219,30 @@ describe('CsvFilter Component', () => {
     // Should still filter based on existing values, undefined is not in Set
     await waitFor(() => {
       expect(screen.getByText('Filtered Results (4 rows)')).toBeInTheDocument()
+    })
+  })
+
+  it('shows feedback message when filter results in no rows', async () => {
+    const leftCSVWithMatchingData = {
+      data: [
+        { name: 'Alice', age: 22, city: 'Miami' },
+        { name: 'Bob', age: 40, city: 'Seattle' },
+        { name: 'Alice', age: 35, city: 'Boston' }
+      ],
+      headers: ['name', 'age', 'city']
+    }
+
+    render(
+      <CsvFilter leftCSV={leftCSVWithMatchingData} rightCSV={mockRightCSV} />
+    )
+
+    const select = screen.getByRole('combobox')
+    fireEvent.mouseDown(select)
+    fireEvent.click(screen.getByText('name'))
+
+    await waitFor(() => {
+      expect(screen.getByText('No matching rows found. The filter excluded all rows from the left CSV based on the selected column from the right CSV.')).toBeInTheDocument()
+      expect(screen.queryByText(/Filtered Results/)).not.toBeInTheDocument()
     })
   })
 

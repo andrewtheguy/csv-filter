@@ -123,6 +123,14 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
         </FormControl>
       </Box>
 
+      {selectedColumnIndex !== '' && filteredData.length === 0 && leftCSV && (
+        <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="body2" color="text.secondary">
+            No matching rows found. The filter excluded all rows from the left CSV based on the selected column from the right CSV.
+          </Typography>
+        </Box>
+      )}
+
       {filteredData.length > 0 && (
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', mt: 1 }}>
           <Button
