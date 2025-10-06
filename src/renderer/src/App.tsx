@@ -51,6 +51,15 @@ function App(): React.JSX.Element {
       )
     }
     const previewData = data.data.slice(0, 10)
+
+    // Create display headers, showing "(Empty column n)" for empty headers (where n is column position)
+    const displayHeaders = data.headers.map((header, index) => {
+      if (!header.trim()) {
+        return `(Empty column ${index + 1})`
+      }
+      return header
+    })
+
     return (
       <Paper sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>{title}</Typography>
@@ -58,8 +67,8 @@ function App(): React.JSX.Element {
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
-                {data.headers.map(header => (
-                  <TableCell key={header}>{header}</TableCell>
+                {displayHeaders.map((header, index) => (
+                  <TableCell key={index}>{header}</TableCell>
                 ))}
               </TableRow>
             </TableHead>

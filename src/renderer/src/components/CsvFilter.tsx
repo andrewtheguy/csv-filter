@@ -77,16 +77,19 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
             onChange={(e) => setSelectedColumn(e.target.value)}
             label="Select Column to Filter By"
           >
-            {rightCSV.headers.map(header => (
-              <MenuItem key={header} value={header}>
-                <Box>
-                  <Typography variant="body2" fontWeight="bold">{header}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Click to filter left CSV using this column
-                  </Typography>
-                </Box>
-              </MenuItem>
-            ))}
+            {rightCSV.headers.map((header, index) => {
+              const displayText = !header.trim() ? `(Empty column ${index + 1})` : header
+              return (
+                <MenuItem key={index} value={header}>
+                  <Box>
+                    <Typography variant="body2" fontWeight="bold">{displayText}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {header.trim() ? 'Click to filter left CSV using this column' : `Filter using column ${index + 1}`}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              )
+            })}
           </Select>
         </FormControl>
         {selectedColumn && (

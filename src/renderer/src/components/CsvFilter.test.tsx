@@ -299,4 +299,61 @@ describe('CsvFilter Component', () => {
       expect(screen.getByText('Filtered Results: 1 rows')).toBeInTheDocument()
     })
   })
+
+  describe('Empty column display behavior', () => {
+    const rightCSVWithEmptyHeaders = {
+      data: [
+        { value1: 'A', value2: 'B' },
+        { value1: 'C', value2: 'D' }
+      ],
+      headers: ['', 'name', '']
+    }
+
+    const leftCSVWithEmptyHeaders = {
+      data: [
+        { value1: 'A', value2: 'B', value3: 'C' },
+        { value1: 'D', value2: 'E', value3: 'F' }
+      ],
+      headers: ['', 'name', '']
+    }
+
+    it('displays empty columns as "(Empty column n)" in dropdown', () => {
+      render(
+        <CsvFilter leftCSV={leftCSVWithEmptyHeaders} rightCSV={rightCSVWithEmptyHeaders} />
+      )
+
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+
+      expect(screen.getByText('(Empty column 1)')).toBeInTheDocument()
+      expect(screen.getByText('name')).toBeInTheDocument()
+      expect(screen.getByText('(Empty column 3)')).toBeInTheDocument()
+    })
+
+    it('shows appropriate captions for empty column selections', () => {
+      render(
+        <CsvFilter leftCSV={leftCSVWithEmptyHeaders} rightCSV={rightCSVWithEmptyHeaders} />
+      )
+
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+      fireEvent.click(screen.getByText('(Empty column 1)'))
+
+      expect(screen.getByText('Filter using column 1')).toBeInTheDocument()
+    })
+
+    it('allows selection of empty columns by display name', () => {
+      render(
+        <CsvFilter leftCSV={leftCSVWithEmptyHeaders} rightCSV={rightCSVWithEmptyHeaders} />
+      )
+
+      const select = screen.getByRole('combobox')
+
+      // Verify the selection can be made
+      fireEvent.mouseDown(select)
+      expect(screen.getByText('(Empty column 1)')).toBeInTheDocument()
+      expect(screen.getByText('name')).toBeInTheDocument()
+      expect(screen.getByText('(Empty column 3)')).toBeInTheDocument()
+    })
+  })
 })
