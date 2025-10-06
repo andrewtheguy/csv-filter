@@ -123,6 +123,148 @@ describe('CsvFilter Component', () => {
     expect(mockSaveFileWithName).toHaveBeenCalledTimes(1)
   })
 
+  it('suggests correct filename based on left file name', async () => {
+    const mockSaveFileWithName = jest.fn()
+    window.api.saveFileWithName = mockSaveFileWithName
+
+    const leftFileName = 'source_data.csv'
+    render(
+      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} leftFileName={leftFileName} />
+    )
+
+    // Apply filter automatically
+    const select = screen.getByRole('combobox')
+    fireEvent.mouseDown(select)
+    fireEvent.click(screen.getByText('name'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Export Filtered CSV/)).toBeInTheDocument()
+    })
+
+    const exportButton = screen.getByText(/Export Filtered CSV/)
+    fireEvent.click(exportButton)
+
+    expect(mockSaveFileWithName).toHaveBeenCalledWith(
+      expect.any(String), // CSV content
+      'source_data_filtered.csv'
+    )
+  })
+
+  it('suggests generic filename when no left file name provided', async () => {
+    const mockSaveFileWithName = jest.fn()
+    window.api.saveFileWithName = mockSaveFileWithName
+
+    render(
+      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
+    )
+
+    // Apply filter automatically
+    const select = screen.getByRole('combobox')
+    fireEvent.mouseDown(select)
+    fireEvent.click(screen.getByText('name'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Export Filtered CSV/)).toBeInTheDocument()
+    })
+
+    const exportButton = screen.getByText(/Export Filtered CSV/)
+    fireEvent.click(exportButton)
+
+    expect(mockSaveFileWithName).toHaveBeenCalledWith(
+      expect.any(String), // CSV content
+      'filtered.csv'
+    )
+  })
+
+  describe('Filename suggestions', () => {
+    it('handles .CSV extension correctly', async () => {
+      const mockSaveFileWithName = jest.fn()
+      window.api.saveFileWithName = mockSaveFileWithName
+
+      const { rerender } = render(
+        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} leftFileName="data.CSV" />
+      )
+
+      // Apply filter automatically
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+      fireEvent.click(screen.getByText('name'))
+
+      await waitFor(() => {
+        expect(screen.getByText(/Export Filtered CSV/)).toBeInTheDocument()
+      })
+
+      const exportButton = screen.getByText(/Export Filtered CSV/)
+      fireEvent.click(exportButton)
+
+      expect(mockSaveFileWithName).toHaveBeenCalledWith(
+        expect.any(String),
+        'data_filtered.csv'
+      )
+
+      // Clean up for next test
+      rerender(<div />)
+    })
+
+    it('handles report.csv filename correctly', async () => {
+      const mockSaveFileWithName = jest.fn()
+      window.api.saveFileWithName = mockSaveFileWithName
+
+      const { rerender } = render(
+        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} leftFileName="report.csv" />
+      )
+
+      // Apply filter automatically
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+      fireEvent.click(screen.getByText('name'))
+
+      await waitFor(() => {
+        expect(screen.getByText(/Export Filtered CSV/)).toBeInTheDocument()
+      })
+
+      const exportButton = screen.getByText(/Export Filtered CSV/)
+      fireEvent.click(exportButton)
+
+      expect(mockSaveFileWithName).toHaveBeenCalledWith(
+        expect.any(String),
+        'report_filtered.csv'
+      )
+
+      // Clean up for next test
+      rerender(<div />)
+    })
+
+    it('handles file1.csv filename correctly', async () => {
+      const mockSaveFileWithName = jest.fn()
+      window.api.saveFileWithName = mockSaveFileWithName
+
+      const { rerender } = render(
+        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} leftFileName="file1.csv" />
+      )
+
+      // Apply filter automatically
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+      fireEvent.click(screen.getByText('name'))
+
+      await waitFor(() => {
+        expect(screen.getByText(/Export Filtered CSV/)).toBeInTheDocument()
+      })
+
+      const exportButton = screen.getByText(/Export Filtered CSV/)
+      fireEvent.click(exportButton)
+
+      expect(mockSaveFileWithName).toHaveBeenCalledWith(
+        expect.any(String),
+        'file1_filtered.csv'
+      )
+
+      // Clean up for next test
+      rerender(<div />)
+    })
+  })
+
 
 
   it('resets filter when CSV data changes', async () => {
