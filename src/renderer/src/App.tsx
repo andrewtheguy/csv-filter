@@ -3,7 +3,7 @@ import Papa from 'papaparse'
 import {
   Box, Button,
   Paper, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Grid
+  TableHead, TableRow, Grid, Pagination
 } from '@mui/material'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import CsvFilter from './components/CsvFilter'
@@ -20,6 +20,8 @@ interface CSVData {
 function App(): React.JSX.Element {
   const [leftCSV, setLeftCSV] = useState<CSVData | null>(null)
   const [rightCSV, setRightCSV] = useState<CSVData | null>(null)
+  const [leftPage, setLeftPage] = useState(1)
+  const [rightPage, setRightPage] = useState(1)
 
   const handleFileUpload = async (isLeft: boolean) => {
     const result = await window.api.selectFile()
@@ -35,14 +37,16 @@ function App(): React.JSX.Element {
         }
         if (isLeft) {
           setLeftCSV(csvData)
+          setLeftPage(1) // Reset to first page when new data is loaded
         } else {
           setRightCSV(csvData)
+          setRightPage(1) // Reset to first page when new data is loaded
         }
       }
     })
   }
 
-  const renderTable = (data: CSVData | null, title: string) => {
+  const renderTable = (data: CSVData | null, title: string, currentPage: number, onPageChange: (event: React.ChangeEvent<unknown>, page: number) => void) => {
     if (!data || data.data.length === 0) {
       return (
         <Paper sx={{ p: 2, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -50,7 +54,12 @@ function App(): React.JSX.Element {
         </Paper>
       )
     }
-    const previewData = data.data.slice(0, 10)
+
+    const ITEMS_PER_PAGE = 10
+    const totalPages = Math.ceil(data.data.length / ITEMS_PER_PAGE)
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    const currentPageData = data.data.slice(startIndex, endIndex)
 
     // Create display headers, showing "(Empty column n)" for empty headers (where n is column position)
     const displayHeaders = data.headers.map((header, index) => {
@@ -73,8 +82,8 @@ function App(): React.JSX.Element {
               </TableRow>
             </TableHead>
             <TableBody>
-              {previewData.map((row, index) => (
-                <TableRow key={index}>
+              {currentPageData.map((row, index) => (
+                <TableRow key={startIndex + index}>
                   {data.headers.map(header => (
                     <TableCell key={header} size="small">{row[header]}</TableCell>
                   ))}
@@ -83,9 +92,21 @@ function App(): React.JSX.Element {
             </TableBody>
           </Table>
         </TableContainer>
-        <Typography variant="caption" sx={{ mt: 1 }}>
-          Showing {previewData.length} of {data.data.length} rows
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+          <Typography variant="caption">
+            Showing {startIndex + 1}-{Math.min(endIndex, data.data.length)} of {data.data.length} rows
+          </Typography>
+          {totalPages > 1 && (
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={onPageChange}
+              size="small"
+              siblingCount={1}
+              boundaryCount={1}
+            />
+          )}
+        </Box>
       </Paper>
     )
   }
@@ -108,9 +129,9 @@ function App(): React.JSX.Element {
               Load Left CSV (Source)
             </Button>
           </Box>
-          {renderTable(leftCSV, "Left CSV - Source")}
+          {renderTable(leftCSV, "Left CSV - Source", leftPage, (_event, page) => setLeftPage(page))}
         </Grid>
-        
+
         <Grid size={6}>
           <Box sx={{ mb: 2 }}>
             <Button
@@ -122,7 +143,7 @@ function App(): React.JSX.Element {
               Load Right CSV (Filter)
             </Button>
           </Box>
-          {renderTable(rightCSV, "Right CSV - Filter")}
+          {renderTable(rightCSV, "Right CSV - Filter", rightPage, (_event, page) => setRightPage(page))}
         </Grid>
       </Grid>
       

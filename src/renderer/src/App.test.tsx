@@ -10,13 +10,6 @@ describe('App Component', () => {
 
   describe('Table display with empty columns', () => {
     it('displays empty headers as "Empty column n" based on position', () => {
-      const mockCSVData = {
-        data: [
-          { value1: 'A', value2: 'B', value3: 'C' },
-          { value1: 'D', value2: 'E', value3: 'F' }
-        ],
-        headers: ['', 'name', '']  // Empty headers at positions 1 and 3
-      }
 
       render(<App />)
 
