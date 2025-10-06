@@ -45,9 +45,9 @@ export function filterCsvData(
     throw new Error('Column name must be a string')
   }
 
-  // Return left data unchanged for empty or invalid column names (maintains backward compatibility)
+  // Throw error for empty column names
   if (!column.trim()) {
-    return leftData
+    throw new Error('Cannot filter by empty column name')
   }
 
   // Check for empty data

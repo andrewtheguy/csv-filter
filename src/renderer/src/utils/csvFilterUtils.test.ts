@@ -30,10 +30,10 @@ describe('filterCsvData', () => {
     expect(result).toEqual(mockLeftData)
   })
 
-  it('returns all left data when column is empty', () => {
-    const result = filterCsvData(mockLeftData, mockRightData, '')
-
-    expect(result).toEqual(mockLeftData)
+  it('throws error when column is empty', () => {
+    expect(() => {
+      filterCsvData(mockLeftData, mockRightData, '')
+    }).toThrow('Cannot filter by empty column name')
   })
 
   it('returns all left data when left data is empty', () => {

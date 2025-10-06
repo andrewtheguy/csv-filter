@@ -314,6 +314,26 @@ describe('CsvFilter Component', () => {
       expect(screen.getByText('name')).toBeInTheDocument()
       expect(screen.getByText('(Empty column 3)')).toBeInTheDocument()
     })
+
+    it('shows error when trying to filter with empty column', async () => {
+      const mockOnError = jest.fn()
+
+      render(
+        <CsvFilter
+          leftCSV={leftCSVWithEmptyHeaders}
+          rightCSV={rightCSVWithEmptyHeaders}
+          onError={mockOnError}
+        />
+      )
+
+      const select = screen.getByRole('combobox')
+      fireEvent.mouseDown(select)
+      fireEvent.click(screen.getByText('(Empty column 1)'))
+
+      await waitFor(() => {
+        expect(mockOnError).toHaveBeenCalledWith('Failed to apply filter: Cannot filter by empty column name')
+      })
+    })
   })
 
   describe('Filter Mode Functionality', () => {
