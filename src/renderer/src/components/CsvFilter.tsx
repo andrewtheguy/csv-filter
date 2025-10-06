@@ -62,20 +62,6 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
     onFilteredDataChange?.(filteredData)
   }, [filteredData, onFilteredDataChange])
 
-  const applyFilter = () => {
-    try {
-      if (!leftCSV || !rightCSV || selectedColumnIndex === '') return
-
-      const selectedColumn = rightCSV.headers[selectedColumnIndex as number]
-      const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn, filterMode)
-      const filteredWithoutEmpty = filterEmptyRows(filtered)
-      setFilteredData(filteredWithoutEmpty)
-    } catch (error) {
-      const errorMessage = `Failed to apply filter: ${error instanceof Error ? error.message : 'Unknown error'}`
-      onError?.(errorMessage)
-    }
-  }
-
   const exportFiltered = async () => {
     try {
       if (!leftCSV || filteredData.length === 0) return
@@ -188,7 +174,6 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
               <TableBody>
                 {(() => {
                   const ITEMS_PER_PAGE = 10
-                  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE)
                   const startIndex = (filteredPage - 1) * ITEMS_PER_PAGE
                   const endIndex = startIndex + ITEMS_PER_PAGE
                   const currentPageData = filteredData.slice(startIndex, endIndex)
