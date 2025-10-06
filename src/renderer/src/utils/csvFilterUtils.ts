@@ -17,6 +17,140 @@ export function filterEmptyRows(data: CSVRow[]): CSVRow[] {
   })
 }
 
+export interface CSVData {
+  data: CSVRow[]
+  headers: string[]
+}
+
+export interface ParseCSVError extends Error {
+  filePath: string
+  type: 'parsing_error' | 'duplicate_headers' | 'invalid_data'
+}
+
+/**
+ * Parses CSV content into structured data with headers and filtered rows
+ * @param csvContent - Raw CSV content as a string
+ * @param filePath - Path to the CSV file for error reporting
+ * @returns Promise resolving to parsed CSV data with headers and filtered data rows
+ * @throws ParseCSVError for parsing errors, duplicate headers, or invalid data
+ */
+export async function parseCSV(csvContent: string, filePath: string): Promise<CSVData> {
+  return new Promise((resolve, reject) => {
+    // Import Papa dynamically to avoid bundling issues in tests
+    import('papaparse').then((Papa) => {
+      Papa.parse(csvContent, {
+        header: false,
+        skipEmptyLines: true,
+        complete: (results) => {
+          try {
+            // Check for parsing errors
+            if (results.errors && results.errors.length > 0) {
+              const error = new Error(`CSV parsing errors found in ${filePath}: ${results.errors.map(err => err.message).join(', ')}`) as ParseCSVError
+              error.filePath = filePath
+              error.type = 'parsing_error'
+              reject(error)
+              return
+            }
+
+            // Check for valid data
+            if (!results.data || results.data.length === 0) {
+              const error = new Error(`No data found in CSV file: ${filePath}`) as ParseCSVError
+              error.filePath = filePath
+              error.type = 'invalid_data'
+              reject(error)
+              return
+            }
+
+            // Check if we have any data at all
+            if (!results.data || results.data.length === 0) {
+              const error = new Error(`No data found in CSV file: ${filePath}`) as ParseCSVError
+              error.filePath = filePath
+              error.type = 'invalid_data'
+              reject(error)
+              return
+            }
+
+            // Extract headers from the first row and remove quotes
+            const rawHeaders = results.data[0] || []
+            const headers = rawHeaders.map(header =>
+              typeof header === 'string' && header.startsWith('"') && header.endsWith('"')
+                ? header.slice(1, -1)
+                : header
+            )
+
+            // Check for duplicate non-empty column names (allow multiple empty columns since they're excluded from filtering)
+            const duplicateHeaders = headers.filter((header, index) =>
+              header && headers.indexOf(header) !== index
+            )
+            if (duplicateHeaders.length > 0) {
+              const uniqueDuplicates = [...new Set(duplicateHeaders)]
+              const error = new Error(`CSV file contains duplicate column names: ${uniqueDuplicates.join(', ')}. Please fix the file and try again.`) as ParseCSVError
+              error.filePath = filePath
+              error.type = 'duplicate_headers'
+              reject(error)
+              return
+            }
+
+            // Count empty headers for proper column mapping
+            const emptyHeadersCount = headers.filter(h => !h).length
+
+            // Convert raw data to objects using headers as keys, starting from row 1 (skip header row)
+            const dataRows: CSVRow[] = results.data.slice(1).map(row => {
+              const obj: CSVRow = {}
+              let emptyHeaderIndex = 0
+              headers.forEach((header, index) => {
+                if (!header) {
+                  if (emptyHeadersCount === 1) {
+                    if (index === headers.length - 1) {
+                      obj[`col_${index + 1}`] = row[index] || ''
+                    } else {
+                      obj[''] = row[index] || ''
+                    }
+                  } else {
+                    if (emptyHeaderIndex === 0) {
+                      obj[''] = row[index] || ''
+                    } else {
+                      obj[`col_${emptyHeaderIndex + 2}`] = row[index] || ''
+                    }
+                    emptyHeaderIndex++
+                  }
+                } else {
+                  obj[header] = row[index] || ''
+                }
+              })
+              return obj
+            })
+
+            const filteredData = filterEmptyRows(dataRows)
+            const csvData: CSVData = {
+              data: filteredData,
+              headers: headers
+            }
+
+            resolve(csvData)
+          } catch (error) {
+            const parseError = new Error(`Failed to process CSV file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`) as ParseCSVError
+            parseError.filePath = filePath
+            parseError.type = 'parsing_error'
+            reject(parseError)
+          }
+        },
+        error: (error) => {
+          const parseError = new Error(`Failed to parse CSV file ${filePath}: ${error.message}`) as ParseCSVError
+          parseError.filePath = filePath
+          parseError.type = 'parsing_error'
+          reject(parseError)
+        }
+      })
+    }).catch((error) => {
+      const parseError = new Error(`Failed to load Papa Parse library: ${error instanceof Error ? error.message : 'Unknown error'}`) as ParseCSVError
+      parseError.filePath = filePath
+      parseError.type = 'parsing_error'
+      reject(parseError)
+    })
+  })
+}
+
 export type FilterMode = 'exclude' | 'include'
 
 /**

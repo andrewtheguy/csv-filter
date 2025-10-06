@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import Papa from 'papaparse'
 import {
   Box, Button,
   Paper, Typography, Table, TableBody, TableCell, TableContainer,
@@ -7,12 +6,7 @@ import {
 } from '@mui/material'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import CsvFilter from './components/CsvFilter'
-import { filterEmptyRows, CSVRow } from './utils/csvFilterUtils'
-
-interface CSVData {
-  data: CSVRow[]
-  headers: string[]
-}
+import { parseCSV, CSVData, ParseCSVError, CSVRow } from './utils/csvFilterUtils'
 
 function App(): React.JSX.Element {
   const [leftCSV, setLeftCSV] = useState<CSVData | null>(null)
@@ -51,72 +45,20 @@ function App(): React.JSX.Element {
       const result = await window.api.selectFile()
       if (!result) return
 
-      Papa.parse<string[]>(result.content, {
-        header: false,
-        skipEmptyLines: true,
-        complete: (results) => {
-          if (results.errors && results.errors.length > 0) {
-            setError(`CSV parsing errors found in ${result.filePath}: ${results.errors.map(err => err.message).join(', ')}`)
-            setErrorOpen(true)
-            return
-          }
+      const csvData = await parseCSV(result.content, result.filePath)
 
-          if (!results.data || results.data.length === 0) {
-            setError(`No data found in CSV file: ${result.filePath}`)
-            setErrorOpen(true)
-            return
-          }
-
-          // Extract headers from the first row and remove quotes
-          const rawHeaders = results.data[0] || []
-          const headers = rawHeaders.map(header =>
-            typeof header === 'string' && header.startsWith('"') && header.endsWith('"')
-              ? header.slice(1, -1)
-              : header
-          )
-
-          // Check for duplicate non-empty column names (allow multiple empty columns since they're excluded from filtering)
-          const duplicateHeaders = headers.filter((header, index) =>
-            header && headers.indexOf(header) !== index
-          )
-          if (duplicateHeaders.length > 0) {
-            const uniqueDuplicates = [...new Set(duplicateHeaders)]
-            setError(`CSV file contains duplicate column names: ${uniqueDuplicates.join(', ')}. Please fix the file and try again.`)
-            setErrorOpen(true)
-            return
-          }
-
-          // Convert raw data to objects using headers as keys, starting from row 1 (skip header row)
-          const dataRows: CSVRow[] = results.data.slice(1).map(row => {
-            const obj: CSVRow = {}
-            headers.forEach((header, index) => {
-              obj[header || `col_${index + 1}`] = row[index] || ''
-            })
-            return obj
-          })
-
-          const filteredData = filterEmptyRows(dataRows)
-          const csvData: CSVData = {
-            data: filteredData,
-            headers: headers
-          }
-          if (isLeft) {
-            setLeftCSV(csvData)
-            setLeftFilePath(result.filePath)
-            setLeftPage(1) // Reset to first page when new data is loaded
-          } else {
-            setRightCSV(csvData)
-            setRightFilePath(result.filePath)
-            setRightPage(1) // Reset to first page when new data is loaded
-          }
-        },
-        error: (error) => {
-          setError(`Failed to parse CSV file ${result.filePath}: ${error.message}`)
-          setErrorOpen(true)
-        }
-      })
+      if (isLeft) {
+        setLeftCSV(csvData)
+        setLeftFilePath(result.filePath)
+        setLeftPage(1) // Reset to first page when new data is loaded
+      } else {
+        setRightCSV(csvData)
+        setRightFilePath(result.filePath)
+        setRightPage(1) // Reset to first page when new data is loaded
+      }
     } catch (error) {
-      setError(`Failed to load file: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      setError(errorMessage)
       setErrorOpen(true)
     }
   }
