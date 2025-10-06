@@ -51,8 +51,8 @@ function App(): React.JSX.Element {
       const result = await window.api.selectFile()
       if (!result) return
 
-      Papa.parse<CSVRow>(result.content, {
-        header: true,
+      Papa.parse<string[]>(result.content, {
+        header: false,
         skipEmptyLines: true,
         complete: (results) => {
           if (results.errors && results.errors.length > 0) {
@@ -67,22 +67,17 @@ function App(): React.JSX.Element {
             return
           }
 
-          // Check for duplicate column names by analyzing the raw header line
-          const lines = result.content.split('\n').filter(line => line.trim())
-          if (lines.length === 0) {
-            setError('CSV file appears to be empty. Please check the file and try again.')
-            setErrorOpen(true)
-            return
-          }
-
-          const headerLine = lines[0]
-          const headers = headerLine.split(',').map(header => header.trim())
-
-          // Allow empty column names since they're excluded from filtering
+          // Extract headers from the first row and remove quotes
+          const rawHeaders = results.data[0] || []
+          const headers = rawHeaders.map(header =>
+            typeof header === 'string' && header.startsWith('"') && header.endsWith('"')
+              ? header.slice(1, -1)
+              : header
+          )
 
           // Check for duplicate non-empty column names (allow multiple empty columns since they're excluded from filtering)
           const duplicateHeaders = headers.filter((header, index) =>
-            header.trim() && headers.indexOf(header) !== index
+            header && headers.indexOf(header) !== index
           )
           if (duplicateHeaders.length > 0) {
             const uniqueDuplicates = [...new Set(duplicateHeaders)]
@@ -91,7 +86,16 @@ function App(): React.JSX.Element {
             return
           }
 
-          const filteredData = filterEmptyRows(results.data)
+          // Convert raw data to objects using headers as keys, starting from row 1 (skip header row)
+          const dataRows: CSVRow[] = results.data.slice(1).map(row => {
+            const obj: CSVRow = {}
+            headers.forEach((header, index) => {
+              obj[header || `col_${index + 1}`] = row[index] || ''
+            })
+            return obj
+          })
+
+          const filteredData = filterEmptyRows(dataRows)
           const csvData: CSVData = {
             data: filteredData,
             headers: headers
