@@ -99,9 +99,7 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
       border: '1px solid',
       borderColor: 'divider'
     }}>
-      <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-        Filtering Options
-      </Typography>
+
 
       <Box sx={{ mb: 2 }}>
         <FormControl fullWidth>
