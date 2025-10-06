@@ -509,7 +509,7 @@ Jane,Doe,30,Other,`
 
     const result = await parseCSV(allEmptyCSV, 'empty-lines.csv')
     expect(result.data).toEqual([])
-    expect(result.headers).toEqual(['', ''])
+    expect(result.headers).toEqual([])
   })
 
   it('handles CSV with only header row and empty lines', async () => {
@@ -642,5 +642,36 @@ John,25,Doe`
       expect(parseError.filePath).toBe('test-file.csv')
       expect(parseError.type).toBe('duplicate_headers')
     }
+  })
+
+  it('skips empty rows at the beginning and treats first non-empty row as headers', async () => {
+    const csvWithLeadingEmptyRows = `,,
+,,
+name,age,city
+John,25,NYC
+Jane,30,LA`
+
+    const result = await parseCSV(csvWithLeadingEmptyRows, 'leading-empty.csv')
+
+    expect(result.headers).toEqual(['name', 'age', 'city'])
+    expect(result.data).toEqual([
+      { name: 'John', age: '25', city: 'NYC' },
+      { name: 'Jane', age: '30', city: 'LA' }
+    ])
+  })
+
+  it('skips initial empty rows and detects second line as header when first line is completely empty', async () => {
+    const csvWithFirstEmpty = `,,
+,age,
+John,25,NYC
+Jane,30,LA`
+
+    const result = await parseCSV(csvWithFirstEmpty, 'first-empty-second-header.csv')
+
+    expect(result.headers).toEqual(['', 'age', ''])
+    expect(result.data).toEqual([
+      { '': 'John', age: '25', 'col_3': 'NYC' },
+      { '': 'Jane', age: '30', 'col_3': 'LA' }
+    ])
   })
 })

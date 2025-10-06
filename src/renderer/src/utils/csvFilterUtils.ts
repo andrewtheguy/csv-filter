@@ -70,8 +70,28 @@ export async function parseCSV(csvContent: string, filePath: string): Promise<CS
               return
             }
 
-            // Extract headers from the first row and remove quotes
-            const rawHeaders = results.data[0] || []
+            // Skip empty rows at the beginning (rows where all values are empty/whitespace)
+            let firstNonEmptyRowIndex = -1
+            for (let i = 0; i < results.data.length; i++) {
+              const row = results.data[i] as string[]
+              if (row.some(value => value !== null && value !== undefined && String(value).trim() !== '')) {
+                firstNonEmptyRowIndex = i
+                break
+              }
+            }
+
+            if (firstNonEmptyRowIndex === -1) {
+              // All rows are empty
+              const csvData: CSVData = {
+                data: [],
+                headers: []
+              }
+              resolve(csvData)
+              return
+            }
+
+            // Extract headers from the first non-empty row and remove quotes
+            const rawHeaders = results.data[firstNonEmptyRowIndex] || []
             const headers = rawHeaders.map(header =>
               typeof header === 'string' && header.startsWith('"') && header.endsWith('"')
                 ? header.slice(1, -1)
@@ -94,8 +114,8 @@ export async function parseCSV(csvContent: string, filePath: string): Promise<CS
             // Count empty headers for proper column mapping
             const emptyHeadersCount = headers.filter(h => !h).length
 
-            // Convert raw data to objects using headers as keys, starting from row 1 (skip header row)
-            const dataRows: CSVRow[] = results.data.slice(1).map(row => {
+            // Convert raw data to objects using headers as keys, starting from the row after the header row
+            const dataRows: CSVRow[] = results.data.slice(firstNonEmptyRowIndex + 1).map(row => {
               const obj: CSVRow = {}
               let emptyHeaderIndex = 0
               headers.forEach((header, index) => {
