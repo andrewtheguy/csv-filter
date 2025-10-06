@@ -265,5 +265,114 @@ Jane,Doe,Smith,30`
       expect(screen.getByText('(Empty column 3)')).toBeInTheDocument()
       expect(screen.getByText('(Empty column 4)')).toBeInTheDocument()
     })
+
+    it('blocks non-empty duplicates even when combined with empty columns', async () => {
+      // This CSV has duplicate "name" columns plus empty columns
+      const csvWithDuplicateNameAndEmpty = `name,,,name,age
+John,Doe,Smith,Max,25`
+
+      ;(window.api.selectFile as jest.Mock).mockResolvedValue({
+        content: csvWithDuplicateNameAndEmpty,
+        filePath: 'duplicate-name-with-empty.csv'
+      })
+
+      render(<App />)
+      const user = userEvent.setup()
+
+      const leftButton = screen.getByText('Load Left CSV (Source)')
+      await user.click(leftButton)
+
+      // Should show error for duplicate "name" column despite having empty columns
+      await waitFor(() => {
+        expect(screen.getByText('CSV file contains duplicate column names: name. Please fix the file and try again.')).toBeInTheDocument()
+      })
+
+      // The table should not be displayed due to the error
+      expect(screen.queryByText('Left CSV - Source')).not.toBeInTheDocument()
+    })
+
+    it('allows columns with whitespace (treated as empty) and loads successfully', async () => {
+      const csvWithWhitespaceColumns = `name,  ,age,   ,
+John,Middle,25,N/A,
+Jane,Doe,30,Other,`
+
+      ;(window.api.selectFile as jest.Mock).mockResolvedValue({
+        content: csvWithWhitespaceColumns,
+        filePath: 'whitespace-columns.csv'
+      })
+
+      render(<App />)
+      const user = userEvent.setup()
+
+      const rightButton = screen.getByText('Load Right CSV (Filter)')
+      await user.click(rightButton)
+
+      // Should load successfully without error (whitespace columns are treated as empty)
+      await waitFor(() => {
+        expect(screen.getByText('Right CSV - Filter: whitespace-columns.csv')).toBeInTheDocument()
+      })
+
+      // Should show empty columns for whitespace columns
+      expect(screen.getByText('(Empty column 2)')).toBeInTheDocument()
+      expect(screen.getByText('(Empty column 5)')).toBeInTheDocument()
+    })
+
+    it('blocks duplicates even when some duplicates are mixed with whitespace', async () => {
+      // This CSV has "age" appearing twice - once with whitespace, once without
+      const csvWithWhitespaceAndRealDuplicates = `name, age ,city,age,value
+John,Middle,NYC,25,100
+Jane,Doe,LA,30,200`
+
+      ;(window.api.selectFile as jest.Mock).mockResolvedValue({
+        content: csvWithWhitespaceAndRealDuplicates,
+        filePath: 'whitespace-and-duplicate.csv'
+      })
+
+      render(<App />)
+      const user = userEvent.setup()
+
+      const leftButton = screen.getByText('Load Left CSV (Source)')
+      await user.click(leftButton)
+
+      // Should show error for duplicate "age" column (whitespace doesn't create separates)
+      await waitFor(() => {
+        expect(screen.getByText('CSV file contains duplicate column names: age. Please fix the file and try again.')).toBeInTheDocument()
+      })
+
+      // The table should not be displayed due to the error
+      expect(screen.queryByText('Left CSV - Source')).not.toBeInTheDocument()
+    })
+
+    it('allows CSV files where entire columns are empty', async () => {
+      // This CSV has one column that's completely empty for all data rows
+      const csvWithEntirelyEmptyColumn = `First Name,Last Name,Store Credit Amount,Partner Company Handle (customer.metafields.customer.partner_company_handle),,Email
+chilo,Joseline,65,the-oaks,,josray3543@gmail.com
+,,,,,
+Johnson,Tracy,65,the-oaks,,Tracyjhn5@aol.com`
+
+      ;(window.api.selectFile as jest.Mock).mockResolvedValue({
+        content: csvWithEntirelyEmptyColumn,
+        filePath: 'entirely-empty-column.csv'
+      })
+
+      render(<App />)
+      const user = userEvent.setup()
+
+      const rightButton = screen.getByText('Load Right CSV (Filter)')
+      await user.click(rightButton)
+
+      // Should load successfully - empty columns are allowed since they're excluded from filtering
+      await waitFor(() => {
+        expect(screen.getByText('Right CSV - Filter: entirely-empty-column.csv')).toBeInTheDocument()
+      })
+
+      // Verify that the empty column (column 5) is displayed as empty
+      expect(screen.getByText('(Empty column 5)')).toBeInTheDocument()
+
+      // Verify that valid data is still present (filteredEmptyRows removes the empty row)
+      expect(screen.getByText('chilo')).toBeInTheDocument()
+      expect(screen.getByText('Johnson')).toBeInTheDocument()
+      // The ,,,,, row should be filtered out by filterEmptyRows
+    })
   })
 })
