@@ -38,9 +38,16 @@ export async function parseCSV(csvContent: string, filePath: string): Promise<CS
   return new Promise((resolve, reject) => {
     // Import Papa dynamically to avoid bundling issues in tests
     import('papaparse').then((Papa) => {
+      // Check if this might be a single-column CSV (no standard delimiters)
+      // For empty content, don't set delimiter to preserve auto-detection error
+      const hasDelimiters = csvContent.trim() ? /[,\t;|]/.test(csvContent) : undefined
+
       Papa.parse(csvContent, {
         header: false,
         skipEmptyLines: true,
+        // For single-column CSVs, force tab delimiter to avoid auto-detection issues
+        // Leave undefined for empty content to preserve delimiter auto-detection error
+        delimiter: hasDelimiters === false ? '\t' : hasDelimiters === true ? undefined : undefined,
         complete: (results) => {
           try {
             // Check for parsing errors
@@ -53,15 +60,6 @@ export async function parseCSV(csvContent: string, filePath: string): Promise<CS
             }
 
             // Check for valid data
-            if (!results.data || results.data.length === 0) {
-              const error = new Error(`No data found in CSV file: ${filePath}`) as ParseCSVError
-              error.filePath = filePath
-              error.type = 'invalid_data'
-              reject(error)
-              return
-            }
-
-            // Check if we have any data at all
             if (!results.data || results.data.length === 0) {
               const error = new Error(`No data found in CSV file: ${filePath}`) as ParseCSVError
               error.filePath = filePath

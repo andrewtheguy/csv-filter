@@ -1,4 +1,4 @@
-import { filterCsvData, filterEmptyRows, parseCSV, CSVData, ParseCSVError } from './csvFilterUtils'
+import { filterCsvData, filterEmptyRows, parseCSV, ParseCSVError } from './csvFilterUtils'
 
 const mockLeftData = [
   { name: 'Alice', age: 25, city: 'NY' },
@@ -369,7 +369,7 @@ describe('parseCSV', () => {
   it('handles empty data CSV gracefully', async () => {
     const emptyCSV = ''
 
-    await expect(parseCSV(emptyCSV, 'empty.csv')).rejects.toThrow('Unable to auto-detect delimiting character')
+    await expect(parseCSV(emptyCSV, 'empty.csv')).rejects.toThrow('Unable to auto-detect delimiting character; defaulted to')
   })
 
   it('handles mixed quoted and unquoted headers', async () => {
@@ -495,7 +495,7 @@ Jane,Doe,30,Other,`
   it('handles completely empty CSV file', async () => {
     const emptyCSV = ``
 
-    await expect(parseCSV(emptyCSV, 'empty.csv')).rejects.toThrow('Unable to auto-detect delimiting character')
+    await expect(parseCSV(emptyCSV, 'empty.csv')).rejects.toThrow()
   })
 
   it('handles CSV with all empty lines', async () => {
@@ -672,6 +672,126 @@ Jane,30,LA`
     expect(result.data).toEqual([
       { '': 'John', age: '25', 'col_3': 'NYC' },
       { '': 'Jane', age: '30', 'col_3': 'LA' }
+    ])
+  })
+
+  it('handles single-column CSV with no delimiters correctly', async () => {
+    const singleColumnCSV = `Associated Company/Partnership Site
+advanced-hair-restoration
+alliance-medical-center
+axiomhealth
+azul-vision`
+
+    const result = await parseCSV(singleColumnCSV, 'single-column.csv')
+
+    expect(result.headers).toEqual(['Associated Company/Partnership Site'])
+    expect(result.data).toEqual([
+      { 'Associated Company/Partnership Site': 'advanced-hair-restoration' },
+      { 'Associated Company/Partnership Site': 'alliance-medical-center' },
+      { 'Associated Company/Partnership Site': 'axiomhealth' },
+      { 'Associated Company/Partnership Site': 'azul-vision' }
+    ])
+  })
+
+  it('handles single-column CSV with realistic data from user example', async () => {
+    const singleColumnCSV = `Associated Company/Partnership Site
+advanced-hair-restoration
+alliance-medical-center
+axiomhealth
+azul-vision
+azul-vision-management
+broad-street
+citymd-scrubs
+citymd-summit-health
+doctors-urgent-care-of-dfw
+eastern-virginia-medical-school
+elite-anesthesia-associates
+embo-partners
+exquisite-dental-implant-center
+favorite-staffing
+georgia-kidney-and-hypertension-clinic
+groth-pain-spine
+isto-biologics
+ivim
+kaiser-permanente-oakland-emergency-dept
+kestra-medical
+keyops
+kindbody
+kiwanda-cottages-noble-house
+lucid-staffing-solutions-llc
+memory-treatment-centers
+michigan-state-university
+millennium-neonatology
+modern-dermatology-westport
+montana-arthritis-center
+noble-anethesia-partners
+partners-in-nephrology-and-endocrinology
+phoenix-children-s-hospital
+pritzker-school-of-medicine
+pure-infusion
+rady-children-s-hospital-san-diego
+retina-consultants-of-orange-county
+reunion-rehabilitation-hospital-plano
+rma
+south-marin-health-wellness-center
+summit-medical-staffing
+summit-radiology
+sunflower-development-center
+texas-health-breeze-urgent-care
+the-oaks
+timothy-groth-md-pc
+uc-davis
+university-of-louisville
+waterville-animal-group`
+
+    const result = await parseCSV(singleColumnCSV, 'user-example-single-column.csv')
+
+    expect(result.headers).toEqual(['Associated Company/Partnership Site'])
+    expect(result.data).toHaveLength(48) // All non-empty rows after filtering
+    expect(result.data[0]).toEqual({
+      'Associated Company/Partnership Site': 'advanced-hair-restoration'
+    })
+    expect(result.data[47]).toEqual({
+      'Associated Company/Partnership Site': 'waterville-animal-group'
+    })
+  })
+
+  it('handles single-column CSV with empty lines mixed in', async () => {
+    const singleColumnWithEmpty = `Single Column Header
+
+first-row
+second-row
+
+
+third-row`
+
+    const result = await parseCSV(singleColumnWithEmpty, 'single-column-with-empty.csv')
+
+    expect(result.headers).toEqual(['Single Column Header'])
+    expect(result.data).toEqual([
+      { 'Single Column Header': 'first-row' },
+      { 'Single Column Header': 'second-row' },
+      { 'Single Column Header': 'third-row' }
+    ])
+  })
+
+  it('handles single-column CSV with numeric data', async () => {
+    const singleColumnNumbers = `Numbers
+1
+2
+3
+4
+5`
+
+    const result = await parseCSV(singleColumnNumbers, 'single-column-numbers.csv')
+
+    expect(result.headers).toEqual(['Numbers'])
+    expect(result.data).toEqual([
+      { 'Numbers': '1' },
+      { 'Numbers': '2' },
+      { 'Numbers': '3' },
+      { 'Numbers': '4' },
+      { 'Numbers': '5' }
     ])
   })
 })

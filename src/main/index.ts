@@ -1,8 +1,10 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { readFileSync } from 'fs'
+import { writeFile } from 'fs/promises'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import * as XLSX from 'xlsx'
 
 function createWindow(): void {
   // Create the browser window.
@@ -58,7 +60,7 @@ app.whenReady().then(() => {
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
       filters: [
-        { name: 'CSV Files', extensions: ['csv'] },
+        { name: 'CSV and Excel Files', extensions: ['csv', 'xlsx'] },
         { name: 'All Files', extensions: ['*'] }
       ]
     })
@@ -66,7 +68,35 @@ app.whenReady().then(() => {
       return null
     }
     const filePath = result.filePaths[0]
-    const content = readFileSync(filePath, 'utf-8')
+
+    // Check if it's an Excel file
+    const isExcel = filePath.toLowerCase().endsWith('.xlsx')
+
+    let content: string
+    if (isExcel) {
+      try {
+        // Read Excel file and convert first sheet to CSV
+        const workbook = XLSX.readFile(filePath)
+
+        // Validate that the workbook has exactly one sheet
+        if (workbook.SheetNames.length !== 1) {
+          throw new Error(`Excel file must contain exactly one sheet. This file has ${workbook.SheetNames.length} sheets: ${workbook.SheetNames.join(', ')}. Please ensure only one worksheet exists (visible or hidden) and try again.`)
+        }
+
+        const sheetName = workbook.SheetNames[0] // Use first sheet
+        const worksheet = workbook.Sheets[sheetName]
+        content = XLSX.utils.sheet_to_csv(worksheet)
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('must contain exactly one sheet')) {
+          throw error // Re-throw validation errors as-is
+        }
+        throw new Error(`Failed to read Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    } else {
+      // Read as CSV file
+      content = readFileSync(filePath, 'utf-8')
+    }
+
     return { content, filePath }
   })
 
@@ -77,8 +107,7 @@ app.whenReady().then(() => {
       ]
     })
     if (!result.canceled && result.filePath) {
-      const fs = require('fs/promises')
-      await fs.writeFile(result.filePath, content, 'utf-8')
+      await writeFile(result.filePath, content, 'utf-8')
     }
   })
 
@@ -90,8 +119,7 @@ app.whenReady().then(() => {
       defaultPath: suggestedName
     })
     if (!result.canceled && result.filePath) {
-      const fs = require('fs/promises')
-      await fs.writeFile(result.filePath, content, 'utf-8')
+      await writeFile(result.filePath, content, 'utf-8')
     }
   })
 
