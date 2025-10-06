@@ -164,7 +164,7 @@ function App(): React.JSX.Element {
   return (
     <Box sx={{ p: 3, maxWidth: 'xl', mx: 'auto' }}>
       <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
-        CSV Comparator
+        CSV Filter
       </Typography>
       
       <Grid container spacing={3}>

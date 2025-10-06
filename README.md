@@ -1,6 +1,6 @@
-# electron
+# CSV Filter
 
-An Electron application with React and TypeScript
+An Electron application with React and TypeScript for filtering CSV data
 
 ## Recommended IDE Setup
 

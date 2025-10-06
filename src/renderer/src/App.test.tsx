@@ -17,7 +17,7 @@ describe('App Component', () => {
       // by creating a mock element that triggers the renderTable logic
 
       // For now, just test the basic component renders without error
-      expect(screen.getByText('CSV Comparator')).toBeInTheDocument()
+      expect(screen.getByText('CSV Filter')).toBeInTheDocument()
       expect(screen.getByText('Load Left CSV (Source)')).toBeInTheDocument()
       expect(screen.getByText('Load Right CSV (Filter)')).toBeInTheDocument()
     })
@@ -26,7 +26,7 @@ describe('App Component', () => {
       // Test the logic by calling renderTable directly via a shallow render or similar
       // For now, verify the component renders correctly
       const { container } = render(<App />)
-      expect(container.querySelector('.MuiTypography-h4')).toHaveTextContent('CSV Comparator')
+      expect(container.querySelector('.MuiTypography-h4')).toHaveTextContent('CSV Filter')
     })
   })
 
@@ -127,7 +127,7 @@ more_data,another_value,third_value
       await waitFor(() => {
         expect(screen.getByText('Load Left CSV (Source)')).toBeInTheDocument()
         // Empty CSV should not crash and should show same state as no data loaded
-        expect(screen.getByText('CSV Comparator')).toBeInTheDocument()
+        expect(screen.getByText('CSV Filter')).toBeInTheDocument()
       })
     })
 
