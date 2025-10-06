@@ -15,12 +15,14 @@ export interface CsvFilterProps {
   leftCSV: CSVData | null
   rightCSV: CSVData | null
   onFilteredDataChange?: (filteredData: CSVRow[]) => void
+  onError?: (error: string) => void
 }
 
 const CsvFilter: React.FC<CsvFilterProps> = ({
   leftCSV,
   rightCSV,
-  onFilteredDataChange
+  onFilteredDataChange,
+  onError
 }) => {
   const [selectedColumnIndex, setSelectedColumnIndex] = useState<number | ''>('')
   const [filteredData, setFilteredData] = useState<CSVRow[]>([])
@@ -37,18 +39,28 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
   }, [filteredData, onFilteredDataChange])
 
   const applyFilter = () => {
-    if (!leftCSV || !rightCSV || selectedColumnIndex === '') return
+    try {
+      if (!leftCSV || !rightCSV || selectedColumnIndex === '') return
 
-    const selectedColumn = rightCSV.headers[selectedColumnIndex as number]
-    const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn)
-    setFilteredData(filtered)
+      const selectedColumn = rightCSV.headers[selectedColumnIndex as number]
+      const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn)
+      setFilteredData(filtered)
+    } catch (error) {
+      const errorMessage = `Failed to apply filter: ${error instanceof Error ? error.message : 'Unknown error'}`
+      onError?.(errorMessage)
+    }
   }
 
   const exportFiltered = async () => {
-    if (!leftCSV || filteredData.length === 0) return
+    try {
+      if (!leftCSV || filteredData.length === 0) return
 
-    const csvString = Papa.unparse(filteredData)
-    await window.api.saveFile(csvString)
+      const csvString = Papa.unparse(filteredData)
+      await window.api.saveFile(csvString)
+    } catch (error) {
+      const errorMessage = `Failed to export filtered CSV: ${error instanceof Error ? error.message : 'Unknown error'}`
+      onError?.(errorMessage)
+    }
   }
 
   if (!rightCSV) {

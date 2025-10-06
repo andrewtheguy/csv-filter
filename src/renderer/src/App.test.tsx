@@ -141,7 +141,8 @@ more_data,another_value,third_value
     `
 
       ;(window.api.selectFile as jest.Mock).mockResolvedValue({
-        content: allEmptyCSV
+        content: allEmptyCSV,
+        filePath: 'empty-lines.csv'
       })
 
       render(<App />)
@@ -150,8 +151,11 @@ more_data,another_value,third_value
       const leftButton = screen.getByText('Load Left CSV (Source)')
       await user.click(leftButton)
 
+      // Should show error snackbar for malformed CSV with inconsistent field counts
       await waitFor(() => {
-        expect(screen.getByText('No data loaded')).toBeInTheDocument()
+        expect(screen.getByText('CSV parsing errors found in empty-lines.csv: Too many fields: expected 2 fields but parsed 3, Too few fields: expected 2 fields but parsed 1')).toBeInTheDocument()
+        // Table should not be displayed due to the error
+        expect(screen.queryByText('Left CSV - Source')).not.toBeInTheDocument()
       })
     })
 
@@ -164,7 +168,8 @@ more_data,another_value,third_value
     `
 
       ;(window.api.selectFile as jest.Mock).mockResolvedValue({
-        content: headerOnlyCSV
+        content: headerOnlyCSV,
+        filePath: 'header-only.csv'
       })
 
       render(<App />)
@@ -173,15 +178,13 @@ more_data,another_value,third_value
       const leftButton = screen.getByText('Load Left CSV (Source)')
       await user.click(leftButton)
 
+      // Should show error snackbar for malformed CSV with inconsistent field counts
       await waitFor(() => {
-        expect(screen.getByText('Left CSV - Source')).toBeInTheDocument()
-        // Should show the header row
-        expect(screen.getAllByText('name')).toHaveLength(1) // Only in header
-        // There may be an empty data row displayed when there are no actual data rows
+        expect(screen.getByText('CSV parsing errors found in header-only.csv: Too few fields: expected 3 fields but parsed 1')).toBeInTheDocument()
       })
 
-      // Should show that there are no meaningful data rows
-      expect(screen.getByText(/Showing/)).toBeInTheDocument()
+      // The table should not be displayed due to the error
+      expect(screen.queryByText('Left CSV - Source')).not.toBeInTheDocument()
     })
   })
 })

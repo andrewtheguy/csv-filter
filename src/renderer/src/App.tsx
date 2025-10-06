@@ -3,7 +3,7 @@ import Papa from 'papaparse'
 import {
   Box, Button,
   Paper, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Grid, Pagination
+  TableHead, TableRow, Grid, Pagination, Alert, Snackbar
 } from '@mui/material'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import CsvFilter from './components/CsvFilter'
@@ -24,6 +24,8 @@ function App(): React.JSX.Element {
   const [rightPage, setRightPage] = useState(1)
   const [leftFilePath, setLeftFilePath] = useState<string | null>(null)
   const [rightFilePath, setRightFilePath] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [errorOpen, setErrorOpen] = useState(false)
 
   const truncatePath = (path: string, maxLength: number = 50): string => {
     if (path.length <= maxLength) return path
@@ -48,28 +50,49 @@ function App(): React.JSX.Element {
   }
 
   const handleFileUpload = async (isLeft: boolean) => {
-    const result = await window.api.selectFile()
-    if (!result) return
+    try {
+      const result = await window.api.selectFile()
+      if (!result) return
 
-    Papa.parse<CSVRow>(result.content, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const csvData: CSVData = {
-          data: results.data,
-          headers: results.meta.fields || []
+      Papa.parse<CSVRow>(result.content, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          if (results.errors && results.errors.length > 0) {
+            setError(`CSV parsing errors found in ${result.filePath}: ${results.errors.map(err => err.message).join(', ')}`)
+            setErrorOpen(true)
+            return
+          }
+
+          if (!results.data || results.data.length === 0) {
+            setError(`No data found in CSV file: ${result.filePath}`)
+            setErrorOpen(true)
+            return
+          }
+
+          const csvData: CSVData = {
+            data: results.data,
+            headers: results.meta.fields || []
+          }
+          if (isLeft) {
+            setLeftCSV(csvData)
+            setLeftFilePath(result.filePath)
+            setLeftPage(1) // Reset to first page when new data is loaded
+          } else {
+            setRightCSV(csvData)
+            setRightFilePath(result.filePath)
+            setRightPage(1) // Reset to first page when new data is loaded
+          }
+        },
+        error: (error) => {
+          setError(`Failed to parse CSV file ${result.filePath}: ${error.message}`)
+          setErrorOpen(true)
         }
-        if (isLeft) {
-          setLeftCSV(csvData)
-          setLeftFilePath(result.filePath)
-          setLeftPage(1) // Reset to first page when new data is loaded
-        } else {
-          setRightCSV(csvData)
-          setRightFilePath(result.filePath)
-          setRightPage(1) // Reset to first page when new data is loaded
-        }
-      }
-    })
+      })
+    } catch (error) {
+      setError(`Failed to load file: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setErrorOpen(true)
+    }
   }
 
   const renderTable = (data: CSVData | null, title: string, filePath: string | null, currentPage: number, onPageChange: (event: React.ChangeEvent<unknown>, page: number) => void) => {
@@ -174,7 +197,25 @@ function App(): React.JSX.Element {
         </Grid>
       </Grid>
       
-      <CsvFilter leftCSV={leftCSV} rightCSV={rightCSV} />
+      <CsvFilter leftCSV={leftCSV} rightCSV={rightCSV} onError={(error) => {
+        setError(error)
+        setErrorOpen(true)
+      }} />
+
+      <Snackbar
+        open={errorOpen}
+        autoHideDuration={6000}
+        onClose={() => setErrorOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setErrorOpen(false)}
+          severity="error"
+          sx={{ width: '100%', maxWidth: 600 }}
+        >
+          {error}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }
