@@ -4,10 +4,7 @@ import {
 } from '@mui/material'
 import DownloadIcon from '@mui/icons-material/Download'
 import Papa from 'papaparse'
-
-interface CSVRow {
-  [key: string]: string | number
-}
+import { filterCsvData, CSVRow } from '../utils/csvFilterUtils'
 
 interface CSVData {
   data: CSVRow[]
@@ -42,13 +39,7 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
   const applyFilter = () => {
     if (!leftCSV || !rightCSV || !selectedColumn) return
 
-    const rightValues = new Set(
-      rightCSV.data.map(row => row[selectedColumn])
-    )
-
-    const filtered = leftCSV.data.filter(row =>
-      !rightValues.has(row[selectedColumn])
-    )
+    const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn)
     setFilteredData(filtered)
   }
 
