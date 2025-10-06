@@ -105,13 +105,13 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
 
       <Box sx={{ mb: 2 }}>
         <FormControl fullWidth>
-          <InputLabel id="column-select-label">Select Column to Filter By</InputLabel>
+          <InputLabel id="column-select-label">Select Column from the Right to Filter By</InputLabel>
           <Select
             labelId="column-select-label"
             id="column-select"
             value={selectedColumnIndex}
             onChange={(e) => setSelectedColumnIndex(Number(e.target.value))}
-            label="Select Column to Filter By"
+            label="Select Column from the Right to Filter By"
           >
             {rightCSV.headers.map((header, index) => {
               const displayText = !header.trim() ? `(Empty column ${index + 1})` : header
@@ -123,14 +123,6 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
             })}
           </Select>
         </FormControl>
-        {selectedColumnIndex !== '' && (
-          <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary', fontSize: '0.875rem' }}>
-            {rightCSV.headers[selectedColumnIndex as number].trim() === ''
-              ? `Filter using column ${(selectedColumnIndex as number) + 1}`
-              : `Filter by column "${rightCSV.headers[selectedColumnIndex as number]}" from right CSV`
-            }
-          </Typography>
-        )}
       </Box>
 
       {filteredData.length > 0 && (
@@ -171,8 +163,8 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
 
                   return currentPageData.map((row, index) => (
                     <TableRow key={startIndex + index}>
-                      {leftCSV.headers.map(header => (
-                        <TableCell key={header} size="small">{row[header]}</TableCell>
+                      {leftCSV.headers.map((header, headerIndex) => (
+                        <TableCell key={headerIndex} size="small">{row[header]}</TableCell>
                       ))}
                     </TableRow>
                   ))

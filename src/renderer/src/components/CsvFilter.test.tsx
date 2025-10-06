@@ -37,7 +37,7 @@ describe('CsvFilter Component', () => {
       <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
     )
     expect(screen.getByText('Filtering Options')).toBeInTheDocument()
-    expect(screen.getByLabelText('Select Column to Filter By')).toBeInTheDocument()
+    expect(screen.getByLabelText('Select Column from the Right to Filter By')).toBeInTheDocument()
     expect(screen.getByRole('combobox')).toBeInTheDocument()
   })
 
@@ -124,17 +124,7 @@ describe('CsvFilter Component', () => {
     expect(mockSaveFile).toHaveBeenCalledTimes(1)
   })
 
-  it('shows selected column description', () => {
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-    )
 
-    const select = screen.getByRole('combobox')
-    fireEvent.mouseDown(select)
-    fireEvent.click(screen.getByText('name'))
-
-    expect(screen.getByText('Filter by column "name" from right CSV')).toBeInTheDocument()
-  })
 
   it('resets filter when CSV data changes', async () => {
     const { rerender } = render(
@@ -286,17 +276,7 @@ describe('CsvFilter Component', () => {
       expect(screen.getByText('(Empty column 3)')).toBeInTheDocument()
     })
 
-    it('shows appropriate captions for empty column selections', () => {
-      render(
-        <CsvFilter leftCSV={leftCSVWithEmptyHeaders} rightCSV={rightCSVWithEmptyHeaders} />
-      )
 
-      const select = screen.getByRole('combobox')
-      fireEvent.mouseDown(select)
-      fireEvent.click(screen.getByText('(Empty column 1)'))
-
-      expect(screen.getByText('Filter using column 1')).toBeInTheDocument()
-    })
 
     it('allows selection of empty columns by display name', () => {
       render(
