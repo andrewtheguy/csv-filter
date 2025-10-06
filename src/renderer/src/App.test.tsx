@@ -37,7 +37,7 @@ describe('App Component', () => {
     })
   })
 
-  describe('PapaParse CSV parsing with skipEmptyLines', () => {
+  describe('CSV parsing empty line handling', () => {
     beforeEach(() => {
       // Mock window.api.selectFile to return controlled CSV data
       ;(window.api.selectFile as jest.Mock).mockClear()
@@ -78,11 +78,11 @@ Alice,28,Miami
       expect(screen.getByText('Alice')).toBeInTheDocument()
 
       // Verify that we have the correct total rows parsed (including rows with empty values like ',,')
-      // skipEmptyLines removes truly empty lines (whitespace only), but keeps lines with delimiters
+      // Empty line filtering removes truly empty lines (whitespace only), but keeps lines with delimiters
       const tableRows = screen.getAllByRole('row').slice(1) // slice(1) to skip header row
       expect(tableRows).toHaveLength(6) // 4 data rows + 2 rows with ',,'
 
-      // Verify that skipEmptyLines correctly filters out completely empty lines found in CSV
+      // Verify that empty line filtering correctly handles lines with delimiters vs truly empty lines
     })
 
     it('handles CSV with mixed empty and data rows correctly', async () => {
