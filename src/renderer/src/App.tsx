@@ -1,12 +1,23 @@
 import { useState } from 'react'
 import {
-  Box, Button,
-  Paper, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Grid, Pagination, Alert, Snackbar
+  Box,
+  Button,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Grid,
+  Pagination,
+  Alert,
+  Snackbar
 } from '@mui/material'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import CsvFilter from './components/CsvFilter'
-import { parseCSV, CSVData, ParseCSVError, CSVRow } from './utils/csvFilterUtils'
+import { parseCSV, CSVData } from './utils/csvFilterUtils'
 
 function App(): React.JSX.Element {
   const [leftCSV, setLeftCSV] = useState<CSVData | null>(null)
@@ -29,8 +40,8 @@ function App(): React.JSX.Element {
     // Reserve space for start + "..." + "/" + filename
     const startLength = Math.floor((maxLength - fileName.length - 4) / 2)
 
-    let start = pathWithoutFile.substring(0, startLength)
-    let end = pathWithoutFile.substring(pathWithoutFile.length - startLength)
+    const start = pathWithoutFile.substring(0, startLength)
+    const end = pathWithoutFile.substring(pathWithoutFile.length - startLength)
 
     // If we have enough space, show full path without truncation
     if (pathWithoutFile.length <= maxLength - fileName.length - 1) {
@@ -40,7 +51,7 @@ function App(): React.JSX.Element {
     return `${start}...${end}/${fileName}`
   }
 
-  const handleFileUpload = async (isLeft: boolean) => {
+  const handleFileUpload = async (isLeft: boolean): Promise<void> => {
     try {
       const result = await window.api.selectFile()
       if (!result) return
@@ -63,11 +74,25 @@ function App(): React.JSX.Element {
     }
   }
 
-  const renderTable = (data: CSVData | null, title: string, filePath: string | null, currentPage: number, onPageChange: (event: React.ChangeEvent<unknown>, page: number) => void) => {
+  const renderTable = (
+    data: CSVData | null,
+    title: string,
+    filePath: string | null,
+    currentPage: number,
+    onPageChange: (event: React.ChangeEvent<unknown>, page: number) => void
+  ): React.JSX.Element => {
     const displayTitle = filePath ? `${title}: ${truncatePath(filePath)}` : title
     if (!data || data.data.length === 0) {
       return (
-        <Paper sx={{ p: 2, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper
+          sx={{
+            p: 2,
+            height: 300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
           <Typography>No data loaded</Typography>
         </Paper>
       )
@@ -89,7 +114,9 @@ function App(): React.JSX.Element {
 
     return (
       <Paper sx={{ p: 2 }}>
-        <Typography variant="body1" sx={{ mb: 2, fontSize: '0.875rem', fontWeight: 500 }}>{displayTitle}</Typography>
+        <Typography variant="body1" sx={{ mb: 2, fontSize: '0.875rem', fontWeight: 500 }}>
+          {displayTitle}
+        </Typography>
         <TableContainer sx={{ maxHeight: 300, overflowX: 'auto' }}>
           <Table stickyHeader size="small">
             <TableHead>
@@ -102,8 +129,10 @@ function App(): React.JSX.Element {
             <TableBody>
               {currentPageData.map((row, index) => (
                 <TableRow key={startIndex + index}>
-                  {data.headers.map(header => (
-                    <TableCell key={header} size="small">{row[header]}</TableCell>
+                  {data.headers.map((header) => (
+                    <TableCell key={header} size="small">
+                      {row[header]}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))}
@@ -112,7 +141,8 @@ function App(): React.JSX.Element {
         </TableContainer>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
           <Typography variant="caption">
-            Showing {startIndex + 1}-{Math.min(endIndex, data.data.length)} of {data.data.length} rows
+            Showing {startIndex + 1}-{Math.min(endIndex, data.data.length)} of {data.data.length}{' '}
+            rows
           </Typography>
           {totalPages > 1 && (
             <Pagination
@@ -134,7 +164,7 @@ function App(): React.JSX.Element {
       <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
         CSV Filter
       </Typography>
-      
+
       <Grid container spacing={3}>
         <Grid size={6}>
           <Box sx={{ mb: 2 }}>
@@ -147,7 +177,9 @@ function App(): React.JSX.Element {
               Load Left CSV (Source)
             </Button>
           </Box>
-          {renderTable(leftCSV, "Left CSV - Source", leftFilePath, leftPage, (_event, page) => setLeftPage(page))}
+          {renderTable(leftCSV, 'Left CSV - Source', leftFilePath, leftPage, (_event, page) =>
+            setLeftPage(page)
+          )}
         </Grid>
 
         <Grid size={6}>
@@ -161,10 +193,12 @@ function App(): React.JSX.Element {
               Load Right CSV (Filter)
             </Button>
           </Box>
-          {renderTable(rightCSV, "Right CSV - Filter", rightFilePath, rightPage, (_event, page) => setRightPage(page))}
+          {renderTable(rightCSV, 'Right CSV - Filter', rightFilePath, rightPage, (_event, page) =>
+            setRightPage(page)
+          )}
         </Grid>
       </Grid>
-      
+
       <CsvFilter
         leftCSV={leftCSV}
         rightCSV={rightCSV}

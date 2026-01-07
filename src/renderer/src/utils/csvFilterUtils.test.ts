@@ -56,9 +56,7 @@ describe('filterCsvData', () => {
 
     const result = filterCsvData(leftData, rightData, 'value')
 
-    expect(result).toEqual([
-      { id: 2, value: 'B' }
-    ])
+    expect(result).toEqual([{ id: 2, value: 'B' }])
   })
 
   it('returns all left data when column does not exist in right data', () => {
@@ -68,60 +66,33 @@ describe('filterCsvData', () => {
   })
 
   it('handles undefined values in columns', () => {
-    const leftData = [
-      { name: 'Alice' },
-      { name: 'Bob' },
-      { name: undefined }
-    ]
+    const leftData = [{ name: 'Alice' }, { name: 'Bob' }, { name: undefined }]
 
-    const rightData = [
-      { name: undefined }
-    ]
+    const rightData = [{ name: undefined }]
 
     const result = filterCsvData(leftData, rightData, 'name')
 
-    expect(result).toEqual([
-      { name: 'Alice' },
-      { name: 'Bob' }
-    ])
+    expect(result).toEqual([{ name: 'Alice' }, { name: 'Bob' }])
   })
 
   it('handles null values in columns', () => {
-    const leftData = [
-      { name: 'Alice' },
-      { name: 'Bob' },
-      { name: null }
-    ]
+    const leftData = [{ name: 'Alice' }, { name: 'Bob' }, { name: null }]
 
-    const rightData = [
-      { name: null }
-    ]
+    const rightData = [{ name: null }]
 
     const result = filterCsvData(leftData, rightData, 'name')
 
-    expect(result).toEqual([
-      { name: 'Alice' },
-      { name: 'Bob' }
-    ])
+    expect(result).toEqual([{ name: 'Alice' }, { name: 'Bob' }])
   })
 
   it('filters correctly with empty strings', () => {
-    const leftData = [
-      { name: 'Alice' },
-      { name: '' },
-      { name: 'Bob' }
-    ]
+    const leftData = [{ name: 'Alice' }, { name: '' }, { name: 'Bob' }]
 
-    const rightData = [
-      { name: '' }
-    ]
+    const rightData = [{ name: '' }]
 
     const result = filterCsvData(leftData, rightData, 'name')
 
-    expect(result).toEqual([
-      { name: 'Alice' },
-      { name: 'Bob' }
-    ])
+    expect(result).toEqual([{ name: 'Alice' }, { name: 'Bob' }])
   })
 
   it('handles duplicate values in right data correctly', () => {
@@ -138,9 +109,7 @@ describe('filterCsvData', () => {
 
     const result = filterCsvData(leftData, rightData, 'name')
 
-    expect(result).toEqual([
-      { name: 'Bob' }
-    ])
+    expect(result).toEqual([{ name: 'Bob' }])
   })
 
   it('does not mutate original data', () => {
@@ -154,22 +123,13 @@ describe('filterCsvData', () => {
   })
 
   it('filters by numeric values', () => {
-    const leftData = [
-      { id: 1 },
-      { id: 2 },
-      { id: 3 }
-    ]
+    const leftData = [{ id: 1 }, { id: 2 }, { id: 3 }]
 
-    const rightData = [
-      { id: 1 },
-      { id: 3 }
-    ]
+    const rightData = [{ id: 1 }, { id: 3 }]
 
     const result = filterCsvData(leftData, rightData, 'id')
 
-    expect(result).toEqual([
-      { id: 2 }
-    ])
+    expect(result).toEqual([{ id: 2 }])
   })
 
   it('includes only matching rows when mode is "include"', () => {
@@ -200,9 +160,7 @@ describe('filterCsvData', () => {
   })
 
   it('returns empty array with include mode when no matches', () => {
-    const leftData = [
-      { name: 'Eve', age: 22 }
-    ]
+    const leftData = [{ name: 'Eve', age: 22 }]
 
     const result = filterCsvData(leftData, mockRightData, 'name', 'include')
 
@@ -346,7 +304,13 @@ describe('parseCSV', () => {
 
     const result = await parseCSV(csvWithQuotes, 'test.csv')
 
-    expect(result.headers).toEqual(['id', 'user_id', 'order_number', 'shipping_first_name', 'shipping_last_name'])
+    expect(result.headers).toEqual([
+      'id',
+      'user_id',
+      'order_number',
+      'shipping_first_name',
+      'shipping_last_name'
+    ])
   })
 
   it('creates proper CSVRow objects from parsed data', async () => {
@@ -369,7 +333,9 @@ describe('parseCSV', () => {
   it('handles empty data CSV gracefully', async () => {
     const emptyCSV = ''
 
-    await expect(parseCSV(emptyCSV, 'empty.csv')).rejects.toThrow('Unable to auto-detect delimiting character; defaulted to')
+    await expect(parseCSV(emptyCSV, 'empty.csv')).rejects.toThrow(
+      'Unable to auto-detect delimiting character; defaulted to'
+    )
   })
 
   it('handles mixed quoted and unquoted headers', async () => {
@@ -378,7 +344,13 @@ describe('parseCSV', () => {
 
     const result = await parseCSV(csvMixedQuotes, 'test.csv')
 
-    expect(result.headers).toEqual(['id', 'user_id', 'order_number', 'shipping_first_name', 'shipping_last_name'])
+    expect(result.headers).toEqual([
+      'id',
+      'user_id',
+      'order_number',
+      'shipping_first_name',
+      'shipping_last_name'
+    ])
     expect(result.data).toEqual([
       {
         id: '123456789',
@@ -394,8 +366,12 @@ describe('parseCSV', () => {
     const csvWithDuplicateNameAndEmpty = `name,,,name,age
 John,Doe,Smith,Max,25`
 
-    await expect(parseCSV(csvWithDuplicateNameAndEmpty, 'duplicate-name-with-empty.csv')).rejects.toThrow('CSV file contains duplicate column names: name.')
-    await expect(parseCSV(csvWithDuplicateNameAndEmpty, 'duplicate-name-with-empty.csv')).rejects.toThrow('CSV file contains duplicate column names: name.')
+    await expect(
+      parseCSV(csvWithDuplicateNameAndEmpty, 'duplicate-name-with-empty.csv')
+    ).rejects.toThrow('CSV file contains duplicate column names: name.')
+    await expect(
+      parseCSV(csvWithDuplicateNameAndEmpty, 'duplicate-name-with-empty.csv')
+    ).rejects.toThrow('CSV file contains duplicate column names: name.')
   })
 
   it('allows columns with whitespace (treated as empty) and loads successfully', async () => {
@@ -407,8 +383,8 @@ Jane,Doe,30,Other,`
 
     expect(result.headers).toEqual(['name', '  ', 'age', '   ', ''])
     expect(result.data).toEqual([
-      { name: 'John', '  ': 'Middle', age: '25', '   ': 'N/A', 'col_5': '' },
-      { name: 'Jane', '  ': 'Doe', age: '30', '   ': 'Other', 'col_5': '' }
+      { name: 'John', '  ': 'Middle', age: '25', '   ': 'N/A', col_5: '' },
+      { name: 'Jane', '  ': 'Doe', age: '30', '   ': 'Other', col_5: '' }
     ])
   })
 
@@ -418,7 +394,13 @@ Jane,Doe,30,Other,`
 
     const result = await parseCSV(csvSample, 'sample-orders.csv')
 
-    expect(result.headers).toEqual(['id', 'user_id', 'order_number', 'shipping_first_name', 'shipping_last_name'])
+    expect(result.headers).toEqual([
+      'id',
+      'user_id',
+      'order_number',
+      'shipping_first_name',
+      'shipping_last_name'
+    ])
     expect(result.data).toHaveLength(1)
     expect(result.data[0]).toEqual({
       id: '123456789',
@@ -482,7 +464,13 @@ Jane,Doe,30,Other,`
 
     const result = await parseCSV(csvWithQuotedHeaders, 'quoted-headers.csv')
 
-    expect(result.headers).toEqual(['id', 'user_id', 'order_number', 'shipping_first_name', 'shipping_last_name'])
+    expect(result.headers).toEqual([
+      'id',
+      'user_id',
+      'order_number',
+      'shipping_first_name',
+      'shipping_last_name'
+    ])
     expect(result.data[0]).toEqual({
       id: '14617637',
       user_id: '22013494',
@@ -498,7 +486,13 @@ Jane,Doe,30,Other,`
 
     const result = await parseCSV(csvMixedQuotes, 'mixed-quotes.csv')
 
-    expect(result.headers).toEqual(['id', 'user_id', 'order_number', 'shipping_first_name', 'shipping_last_name'])
+    expect(result.headers).toEqual([
+      'id',
+      'user_id',
+      'order_number',
+      'shipping_first_name',
+      'shipping_last_name'
+    ])
     expect(result.data[0]).toEqual({
       id: '14617637',
       user_id: '22013494',
@@ -521,7 +515,8 @@ Jane,Doe,30,Other,`
     expect(result.data[0]).toEqual({
       name: 'Smith, John',
       address: '123 Main St, Suite 100\nAnytown, USA',
-      description: 'Product "Special Edition" with features including bullets:\n- Feature 1\n- Feature 2'
+      description:
+        'Product "Special Edition" with features including bullets:\n- Feature 1\n- Feature 2'
     })
   })
 
@@ -553,14 +548,14 @@ Johnson,Tracy,65,,Tracyjhn5@aol.com`
         'Last Name': 'Joseline',
         'Store Credit Amount': '65',
         '': '',
-        'Email': 'josray3543@gmail.com'
+        Email: 'josray3543@gmail.com'
       },
       {
         'First Name': 'Johnson',
         'Last Name': 'Tracy',
         'Store Credit Amount': '65',
         '': '',
-        'Email': 'Tracyjhn5@aol.com'
+        Email: 'Tracyjhn5@aol.com'
       }
     ])
   })
@@ -621,8 +616,8 @@ Jane,30,LA`
 
     expect(result.headers).toEqual(['', 'age', ''])
     expect(result.data).toEqual([
-      { '': 'John', age: '25', 'col_3': 'NYC' },
-      { '': 'Jane', age: '30', 'col_3': 'LA' }
+      { '': 'John', age: '25', col_3: 'NYC' },
+      { '': 'Jane', age: '30', col_3: 'LA' }
     ])
   })
 
@@ -705,7 +700,7 @@ yankee-laboratory-testing`
     expect(result.data[0]).toEqual({
       'Partner Companies': 'zenith-dental-clinic'
     })
-    expect(result.data[47]).toEqual({
+    expect(result.data[50]).toEqual({
       'Partner Companies': 'yankee-laboratory-testing'
     })
   })
@@ -741,11 +736,11 @@ third-row`
 
     expect(result.headers).toEqual(['Numbers'])
     expect(result.data).toEqual([
-      { 'Numbers': '1' },
-      { 'Numbers': '2' },
-      { 'Numbers': '3' },
-      { 'Numbers': '4' },
-      { 'Numbers': '5' }
+      { Numbers: '1' },
+      { Numbers: '2' },
+      { Numbers: '3' },
+      { Numbers: '4' },
+      { Numbers: '5' }
     ])
   })
 

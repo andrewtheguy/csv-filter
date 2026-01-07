@@ -26,24 +26,18 @@ describe('CsvFilter Component', () => {
   })
 
   it('renders nothing when rightCSV is null', () => {
-    const { container } = render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={null} />
-    )
+    const { container } = render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={null} />)
     expect(container.firstChild).toBeNull()
   })
 
   it('renders filtering options when rightCSV is provided', () => {
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-    )
+    render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
     expect(screen.getByLabelText('Select Column from the Right to Filter By')).toBeInTheDocument()
     expect(screen.getByRole('combobox')).toBeInTheDocument()
   })
 
   it('displays column options from rightCSV headers', () => {
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-    )
+    render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
     const select = screen.getByRole('combobox')
     fireEvent.mouseDown(select)
@@ -53,9 +47,7 @@ describe('CsvFilter Component', () => {
   })
 
   it('automatically applies filter when column is selected and leftCSV exists', async () => {
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-    )
+    render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
     const select = screen.getByRole('combobox')
 
@@ -72,9 +64,7 @@ describe('CsvFilter Component', () => {
   })
 
   it('does not show filtered results when leftCSV is null', () => {
-    render(
-      <CsvFilter leftCSV={null} rightCSV={mockRightCSV} />
-    )
+    render(<CsvFilter leftCSV={null} rightCSV={mockRightCSV} />)
 
     const select = screen.getByRole('combobox')
 
@@ -86,9 +76,7 @@ describe('CsvFilter Component', () => {
   })
 
   it('shows export button after filtering', async () => {
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-    )
+    render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
     // Apply filter automatically
     const select = screen.getByRole('combobox')
@@ -104,9 +92,7 @@ describe('CsvFilter Component', () => {
     const mockSaveFileWithName = jest.fn()
     window.api.saveFileWithName = mockSaveFileWithName
 
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-    )
+    render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
     // Apply filter automatically
     const select = screen.getByRole('combobox')
@@ -128,9 +114,7 @@ describe('CsvFilter Component', () => {
     window.api.saveFileWithName = mockSaveFileWithName
 
     const leftFileName = 'source_data.csv'
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} leftFileName={leftFileName} />
-    )
+    render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} leftFileName={leftFileName} />)
 
     // Apply filter automatically
     const select = screen.getByRole('combobox')
@@ -154,9 +138,7 @@ describe('CsvFilter Component', () => {
     const mockSaveFileWithName = jest.fn()
     window.api.saveFileWithName = mockSaveFileWithName
 
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-    )
+    render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
     // Apply filter automatically
     const select = screen.getByRole('combobox')
@@ -197,10 +179,7 @@ describe('CsvFilter Component', () => {
       const exportButton = screen.getByText(/Export Filtered CSV/)
       fireEvent.click(exportButton)
 
-      expect(mockSaveFileWithName).toHaveBeenCalledWith(
-        expect.any(String),
-        'data_filtered.csv'
-      )
+      expect(mockSaveFileWithName).toHaveBeenCalledWith(expect.any(String), 'data_filtered.csv')
 
       // Clean up for next test
       rerender(<div />)
@@ -226,10 +205,7 @@ describe('CsvFilter Component', () => {
       const exportButton = screen.getByText(/Export Filtered CSV/)
       fireEvent.click(exportButton)
 
-      expect(mockSaveFileWithName).toHaveBeenCalledWith(
-        expect.any(String),
-        'report_filtered.csv'
-      )
+      expect(mockSaveFileWithName).toHaveBeenCalledWith(expect.any(String), 'report_filtered.csv')
 
       // Clean up for next test
       rerender(<div />)
@@ -255,22 +231,15 @@ describe('CsvFilter Component', () => {
       const exportButton = screen.getByText(/Export Filtered CSV/)
       fireEvent.click(exportButton)
 
-      expect(mockSaveFileWithName).toHaveBeenCalledWith(
-        expect.any(String),
-        'file1_filtered.csv'
-      )
+      expect(mockSaveFileWithName).toHaveBeenCalledWith(expect.any(String), 'file1_filtered.csv')
 
       // Clean up for next test
       rerender(<div />)
     })
   })
 
-
-
   it('resets filter when CSV data changes', async () => {
-    const { rerender } = render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-    )
+    const { rerender } = render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
     const select = screen.getByRole('combobox')
     fireEvent.mouseDown(select)
@@ -298,9 +267,7 @@ describe('CsvFilter Component', () => {
   })
 
   it('does not show filtered results paper when no filter applied', () => {
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-    )
+    render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
     expect(screen.queryByText(/Filtered Results:/)).not.toBeInTheDocument()
   })
@@ -329,12 +296,7 @@ describe('CsvFilter Component', () => {
   })
 
   it('handles empty left CSV gracefully', () => {
-    render(
-      <CsvFilter
-        leftCSV={{ data: [], headers: ['name', 'age'] }}
-        rightCSV={mockRightCSV}
-      />
-    )
+    render(<CsvFilter leftCSV={{ data: [], headers: ['name', 'age'] }} rightCSV={mockRightCSV} />)
 
     const select = screen.getByRole('combobox')
     fireEvent.mouseDown(select)
@@ -350,9 +312,7 @@ describe('CsvFilter Component', () => {
       headers: ['missingColumn']
     }
 
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={rightCSVWithExtraColumn} />
-    )
+    render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={rightCSVWithExtraColumn} />)
 
     const select = screen.getByRole('combobox')
     fireEvent.mouseDown(select)
@@ -374,32 +334,29 @@ describe('CsvFilter Component', () => {
       headers: ['name', 'age', 'city']
     }
 
-    render(
-      <CsvFilter leftCSV={leftCSVWithMatchingData} rightCSV={mockRightCSV} />
-    )
+    render(<CsvFilter leftCSV={leftCSVWithMatchingData} rightCSV={mockRightCSV} />)
 
     const select = screen.getByRole('combobox')
     fireEvent.mouseDown(select)
     fireEvent.click(screen.getByText('name'))
 
     await waitFor(() => {
-      expect(screen.getByText('No matching rows found. The filter excluded all rows from the left CSV based on the selected column from the right CSV.')).toBeInTheDocument()
+      expect(
+        screen.getByText(
+          'No matching rows found. The filter excluded all rows from the left CSV based on the selected column from the right CSV.'
+        )
+      ).toBeInTheDocument()
       expect(screen.queryByText(/Filtered Results/)).not.toBeInTheDocument()
     })
   })
 
   it('handles filtering when switching columns', async () => {
     const filterByAgeRightCSV = {
-      data: [
-        { age: 25 },
-        { age: 30 }
-      ],
+      data: [{ age: 25 }, { age: 30 }],
       headers: ['age']
     }
 
-    render(
-      <CsvFilter leftCSV={mockLeftCSV} rightCSV={filterByAgeRightCSV} />
-    )
+    render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={filterByAgeRightCSV} />)
 
     // First filter by age (should exclude Alice and Bob)
     const select = screen.getByRole('combobox')
@@ -429,9 +386,7 @@ describe('CsvFilter Component', () => {
     }
 
     it('displays empty columns as "(Empty column n)" in dropdown', () => {
-      render(
-        <CsvFilter leftCSV={leftCSVWithEmptyHeaders} rightCSV={rightCSVWithEmptyHeaders} />
-      )
+      render(<CsvFilter leftCSV={leftCSVWithEmptyHeaders} rightCSV={rightCSVWithEmptyHeaders} />)
 
       const select = screen.getByRole('combobox')
       fireEvent.mouseDown(select)
@@ -441,12 +396,8 @@ describe('CsvFilter Component', () => {
       expect(screen.getByText('(Empty column 3)')).toBeInTheDocument()
     })
 
-
-
     it('allows selection of empty columns by display name', () => {
-      render(
-        <CsvFilter leftCSV={leftCSVWithEmptyHeaders} rightCSV={rightCSVWithEmptyHeaders} />
-      )
+      render(<CsvFilter leftCSV={leftCSVWithEmptyHeaders} rightCSV={rightCSVWithEmptyHeaders} />)
 
       const select = screen.getByRole('combobox')
 
@@ -473,16 +424,16 @@ describe('CsvFilter Component', () => {
       fireEvent.click(screen.getByText('(Empty column 1)'))
 
       await waitFor(() => {
-        expect(mockOnError).toHaveBeenCalledWith('Failed to apply filter: Cannot filter by empty column name')
+        expect(mockOnError).toHaveBeenCalledWith(
+          'Failed to apply filter: Cannot filter by empty column name'
+        )
       })
     })
   })
 
   describe('Filter Mode Functionality', () => {
     it('renders filter mode radio buttons', () => {
-      render(
-        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-      )
+      render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
       expect(screen.getByText('Filter Mode')).toBeInTheDocument()
       expect(screen.getByLabelText('Exclude')).toBeInTheDocument()
@@ -490,9 +441,7 @@ describe('CsvFilter Component', () => {
     })
 
     it('defaults to exclude mode', () => {
-      render(
-        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-      )
+      render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
       const excludeRadio = screen.getByLabelText('Exclude') as HTMLInputElement
       const includeRadio = screen.getByLabelText('Include') as HTMLInputElement
@@ -502,9 +451,7 @@ describe('CsvFilter Component', () => {
     })
 
     it('applies exclude filter by default', async () => {
-      render(
-        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-      )
+      render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
       const select = screen.getByRole('combobox')
       fireEvent.mouseDown(select)
@@ -517,9 +464,7 @@ describe('CsvFilter Component', () => {
     })
 
     it('applies include filter when include mode is selected', async () => {
-      render(
-        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-      )
+      render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
       // Select include mode
       const includeRadio = screen.getByLabelText('Include')
@@ -537,9 +482,7 @@ describe('CsvFilter Component', () => {
     })
 
     it('automatically updates filter results when switching filter modes', async () => {
-      render(
-        <CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />
-      )
+      render(<CsvFilter leftCSV={mockLeftCSV} rightCSV={mockRightCSV} />)
 
       // First select column and get exclude results
       const select = screen.getByRole('combobox')
@@ -569,16 +512,18 @@ describe('CsvFilter Component', () => {
         headers: ['name', 'age']
       }
 
-      render(
-        <CsvFilter leftCSV={leftDataWithNoMatches} rightCSV={mockRightCSV} />
-      )
+      render(<CsvFilter leftCSV={leftDataWithNoMatches} rightCSV={mockRightCSV} />)
 
       const select = screen.getByRole('combobox')
       fireEvent.mouseDown(select)
       fireEvent.click(screen.getByText('name'))
 
       await waitFor(() => {
-        expect(screen.getByText('No matching rows found. The filter excluded all rows from the left CSV based on the selected column from the right CSV.')).toBeInTheDocument()
+        expect(
+          screen.getByText(
+            'No matching rows found. The filter excluded all rows from the left CSV based on the selected column from the right CSV.'
+          )
+        ).toBeInTheDocument()
       })
     })
 
@@ -591,9 +536,7 @@ describe('CsvFilter Component', () => {
         headers: ['name', 'age']
       }
 
-      render(
-        <CsvFilter leftCSV={leftDataWithNoMatches} rightCSV={mockRightCSV} />
-      )
+      render(<CsvFilter leftCSV={leftDataWithNoMatches} rightCSV={mockRightCSV} />)
 
       // Select include mode
       const includeRadio = screen.getByLabelText('Include')
@@ -605,7 +548,11 @@ describe('CsvFilter Component', () => {
       fireEvent.click(screen.getByText('name'))
 
       await waitFor(() => {
-        expect(screen.getByText('No matching rows found. No rows from the left CSV matched the values in the selected column from the right CSV.')).toBeInTheDocument()
+        expect(
+          screen.getByText(
+            'No matching rows found. No rows from the left CSV matched the values in the selected column from the right CSV.'
+          )
+        ).toBeInTheDocument()
       })
     })
   })

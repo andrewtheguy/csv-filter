@@ -6,7 +6,8 @@ import { ipcRenderer } from 'electron'
 const api = {
   selectFile: () => ipcRenderer.invoke('select-file'),
   saveFile: (content: string) => ipcRenderer.invoke('save-file', content),
-  saveFileWithName: (content: string, suggestedName: string) => ipcRenderer.invoke('save-file-with-name', content, suggestedName),
+  saveFileWithName: (content: string, suggestedName: string) =>
+    ipcRenderer.invoke('save-file-with-name', content, suggestedName)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

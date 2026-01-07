@@ -80,7 +80,9 @@ app.whenReady().then(() => {
 
         // Validate that the workbook has exactly one sheet
         if (workbook.SheetNames.length !== 1) {
-          throw new Error(`Excel file must contain exactly one sheet. This file has ${workbook.SheetNames.length} sheets: ${workbook.SheetNames.join(', ')}. Please ensure only one worksheet exists (visible or hidden) and try again.`)
+          throw new Error(
+            `Excel file must contain exactly one sheet. This file has ${workbook.SheetNames.length} sheets: ${workbook.SheetNames.join(', ')}. Please ensure only one worksheet exists (visible or hidden) and try again.`
+          )
         }
 
         const sheetName = workbook.SheetNames[0] // Use first sheet
@@ -90,7 +92,9 @@ app.whenReady().then(() => {
         if (error instanceof Error && error.message.includes('must contain exactly one sheet')) {
           throw error // Re-throw validation errors as-is
         }
-        throw new Error(`Failed to read Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        throw new Error(
+          `Failed to read Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
       }
     } else {
       // Read as CSV file
@@ -102,9 +106,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('save-file', async (_, content: string) => {
     const result = await dialog.showSaveDialog({
-      filters: [
-        { name: 'CSV Files', extensions: ['csv'] },
-      ]
+      filters: [{ name: 'CSV Files', extensions: ['csv'] }]
     })
     if (!result.canceled && result.filePath) {
       await writeFile(result.filePath, content, 'utf-8')
@@ -113,9 +115,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('save-file-with-name', async (_, content: string, suggestedName: string) => {
     const result = await dialog.showSaveDialog({
-      filters: [
-        { name: 'CSV Files', extensions: ['csv'] },
-      ],
+      filters: [{ name: 'CSV Files', extensions: ['csv'] }],
       defaultPath: suggestedName
     })
     if (!result.canceled && result.filePath) {

@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from 'react'
 import {
-  Box, Button, Select, MenuItem, FormControl, InputLabel, Typography, Paper,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination,
-  RadioGroup, FormControlLabel, Radio
+  Box,
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Pagination,
+  RadioGroup,
+  FormControlLabel,
+  Radio
 } from '@mui/material'
 import DownloadIcon from '@mui/icons-material/Download'
 import Papa from 'papaparse'
@@ -64,7 +79,7 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
     onFilteredDataChange?.(filteredData)
   }, [filteredData, onFilteredDataChange])
 
-  const exportFiltered = async () => {
+  const exportFiltered = async (): Promise<void> => {
     try {
       if (!leftCSV || filteredData.length === 0) return
 
@@ -89,14 +104,16 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
   }
 
   return (
-    <Box sx={{
-      mt: 2,
-      p: 2,
-      bgcolor: 'background.paper',
-      borderRadius: 2,
-      border: '1px solid',
-      borderColor: 'divider'
-    }}>
+    <Box
+      sx={{
+        mt: 2,
+        p: 2,
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider'
+      }}
+    >
       {/* Filter Mode Selection */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="body1" sx={{ mb: 1, fontWeight: 500, color: 'text.primary' }}>
@@ -122,7 +139,9 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
 
       <Box sx={{ mb: 2 }}>
         <FormControl fullWidth>
-          <InputLabel id="column-select-label">Select Column from the Right to Filter By</InputLabel>
+          <InputLabel id="column-select-label">
+            Select Column from the Right to Filter By
+          </InputLabel>
           <Select
             labelId="column-select-label"
             id="column-select"
@@ -143,12 +162,20 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
       </Box>
 
       {selectedColumnIndex !== '' && filteredData.length === 0 && leftCSV && (
-        <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+        <Box
+          sx={{
+            mt: 2,
+            p: 2,
+            bgcolor: 'action.hover',
+            borderRadius: 1,
+            border: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
           <Typography variant="body2" color="text.secondary">
             {filterMode === 'exclude'
               ? 'No matching rows found. The filter excluded all rows from the left CSV based on the selected column from the right CSV.'
-              : 'No matching rows found. No rows from the left CSV matched the values in the selected column from the right CSV.'
-            }
+              : 'No matching rows found. No rows from the left CSV matched the values in the selected column from the right CSV.'}
           </Typography>
         </Box>
       )}
@@ -177,7 +204,9 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
               <TableHead>
                 <TableRow>
                   {leftCSV.headers.map((header, index) => (
-                    <TableCell key={index}>{!header.trim() ? `(Empty column ${index + 1})` : header}</TableCell>
+                    <TableCell key={index}>
+                      {!header.trim() ? `(Empty column ${index + 1})` : header}
+                    </TableCell>
                   ))}
                 </TableRow>
               </TableHead>
@@ -191,7 +220,9 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
                   return currentPageData.map((row, index) => (
                     <TableRow key={startIndex + index}>
                       {leftCSV.headers.map((header, headerIndex) => (
-                        <TableCell key={headerIndex} size="small">{row[header]}</TableCell>
+                        <TableCell key={headerIndex} size="small">
+                          {row[header]}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))
@@ -199,7 +230,9 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
               </TableBody>
             </Table>
           </TableContainer>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}
+          >
             {(() => {
               const ITEMS_PER_PAGE = 10
               const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE)
@@ -209,7 +242,8 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
               return (
                 <>
                   <Typography variant="caption">
-                    Showing {startIndex + 1}-{Math.min(endIndex, filteredData.length)} of {filteredData.length} rows
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredData.length)} of{' '}
+                    {filteredData.length} rows
                   </Typography>
                   {totalPages > 1 && (
                     <Pagination
