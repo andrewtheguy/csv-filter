@@ -20,6 +20,24 @@ const mockRightCSV = {
   headers: ['name', 'age']
 }
 
+const mockLeftCSVForCompare = {
+  data: [
+    { email: 'alice@example.com', balance: 100 },
+    { email: 'bob@example.com', balance: 200 },
+    { email: 'charlie@example.com', balance: 300 }
+  ],
+  headers: ['email', 'balance']
+}
+
+const mockRightCSVForCompare = {
+  data: [
+    { email: 'alice@example.com', balance: 150 },
+    { email: 'bob@example.com', balance: 200 },
+    { email: 'diana@example.com', balance: 400 }
+  ],
+  headers: ['email', 'balance']
+}
+
 describe('CsvFilter Component', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -553,6 +571,328 @@ describe('CsvFilter Component', () => {
             'No matching rows found. No rows from the left CSV matched the values in the selected column from the right CSV.'
           )
         ).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('Compare Mode', () => {
+    it('renders Filter and Compare tabs', () => {
+      render(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />)
+
+      expect(screen.getByRole('tab', { name: 'Filter' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Compare' })).toBeInTheDocument()
+    })
+
+    it('defaults to Filter tab', () => {
+      render(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />)
+
+      const filterTab = screen.getByRole('tab', { name: 'Filter' })
+      expect(filterTab).toHaveAttribute('aria-selected', 'true')
+    })
+
+    it('switches to Compare mode when Compare tab is clicked', async () => {
+      render(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />)
+
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(compareTab).toHaveAttribute('aria-selected', 'true')
+        expect(screen.getByLabelText('Key Column')).toBeInTheDocument()
+        expect(screen.getByLabelText('Value Column')).toBeInTheDocument()
+      })
+    })
+
+    it('shows common columns in Key Column dropdown', async () => {
+      render(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />)
+
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Key Column')).toBeInTheDocument()
+      })
+
+      const keySelect = screen.getByLabelText('Key Column')
+      fireEvent.mouseDown(keySelect)
+
+      expect(screen.getByText('email')).toBeInTheDocument()
+      expect(screen.getByText('balance')).toBeInTheDocument()
+    })
+
+    it('shows message when no common columns exist', async () => {
+      const leftCSVNoCommon = {
+        data: [{ uniqueLeft: 'value' }],
+        headers: ['uniqueLeft']
+      }
+      const rightCSVNoCommon = {
+        data: [{ uniqueRight: 'value' }],
+        headers: ['uniqueRight']
+      }
+
+      render(<CsvFilter leftCSV={leftCSVNoCommon} rightCSV={rightCSVNoCommon} />)
+
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/No common columns found between the left and right CSVs/)
+        ).toBeInTheDocument()
+      })
+    })
+
+    it('performs comparison when key and value columns are selected', async () => {
+      render(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />)
+
+      // Switch to Compare mode
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Key Column')).toBeInTheDocument()
+      })
+
+      // Select key column (email)
+      const keySelect = screen.getByLabelText('Key Column')
+      fireEvent.mouseDown(keySelect)
+      await waitFor(() => {
+        const emailOption = screen.getByRole('option', { name: 'email' })
+        fireEvent.click(emailOption)
+      })
+
+      // Select value column (balance)
+      const valueSelect = screen.getByLabelText('Value Column')
+      fireEvent.mouseDown(valueSelect)
+      await waitFor(() => {
+        const balanceOption = screen.getByRole('option', { name: 'balance' })
+        fireEvent.click(balanceOption)
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText('Comparison Results (4 rows)')).toBeInTheDocument()
+      })
+    })
+
+    it('shows summary chips with correct counts', async () => {
+      render(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />)
+
+      // Switch to Compare mode
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Key Column')).toBeInTheDocument()
+      })
+
+      // Select key column (email)
+      const keySelect = screen.getByLabelText('Key Column')
+      fireEvent.mouseDown(keySelect)
+      await waitFor(() => {
+        const emailOption = screen.getByRole('option', { name: 'email' })
+        fireEvent.click(emailOption)
+      })
+
+      // Select value column (balance)
+      const valueSelect = screen.getByLabelText('Value Column')
+      fireEvent.mouseDown(valueSelect)
+      await waitFor(() => {
+        const balanceOption = screen.getByRole('option', { name: 'balance' })
+        fireEvent.click(balanceOption)
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText('Total: 4')).toBeInTheDocument()
+        expect(screen.getByText('Matched: 2')).toBeInTheDocument()
+        expect(screen.getByText('Only Left: 1')).toBeInTheDocument()
+        expect(screen.getByText('Only Right: 1')).toBeInTheDocument()
+      })
+    })
+
+    it('shows export button after comparison', async () => {
+      render(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />)
+
+      // Switch to Compare mode
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Key Column')).toBeInTheDocument()
+      })
+
+      // Select key column (email)
+      const keySelect = screen.getByLabelText('Key Column')
+      fireEvent.mouseDown(keySelect)
+      await waitFor(() => {
+        const emailOption = screen.getByRole('option', { name: 'email' })
+        fireEvent.click(emailOption)
+      })
+
+      // Select value column (balance)
+      const valueSelect = screen.getByLabelText('Value Column')
+      fireEvent.mouseDown(valueSelect)
+      await waitFor(() => {
+        const balanceOption = screen.getByRole('option', { name: 'balance' })
+        fireEvent.click(balanceOption)
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText(/Export Comparison CSV/)).toBeInTheDocument()
+      })
+    })
+
+    it('exports comparison CSV with correct filename', async () => {
+      const mockSaveFileWithName = jest.fn()
+      window.api.saveFileWithName = mockSaveFileWithName
+
+      render(
+        <CsvFilter
+          leftCSV={mockLeftCSVForCompare}
+          rightCSV={mockRightCSVForCompare}
+          leftFileName="source.csv"
+        />
+      )
+
+      // Switch to Compare mode
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Key Column')).toBeInTheDocument()
+      })
+
+      // Select key column (email)
+      const keySelect = screen.getByLabelText('Key Column')
+      fireEvent.mouseDown(keySelect)
+      await waitFor(() => {
+        const emailOption = screen.getByRole('option', { name: 'email' })
+        fireEvent.click(emailOption)
+      })
+
+      // Select value column (balance)
+      const valueSelect = screen.getByLabelText('Value Column')
+      fireEvent.mouseDown(valueSelect)
+      await waitFor(() => {
+        const balanceOption = screen.getByRole('option', { name: 'balance' })
+        fireEvent.click(balanceOption)
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText(/Export Comparison CSV/)).toBeInTheDocument()
+      })
+
+      const exportButton = screen.getByText(/Export Comparison CSV/)
+      fireEvent.click(exportButton)
+
+      expect(mockSaveFileWithName).toHaveBeenCalledWith(expect.any(String), 'source_comparison.csv')
+    })
+
+    it('displays comparison table with correct columns', async () => {
+      render(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />)
+
+      // Switch to Compare mode
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Key Column')).toBeInTheDocument()
+      })
+
+      // Select key column (email)
+      const keySelect = screen.getByLabelText('Key Column')
+      fireEvent.mouseDown(keySelect)
+      await waitFor(() => {
+        const emailOption = screen.getByRole('option', { name: 'email' })
+        fireEvent.click(emailOption)
+      })
+
+      // Select value column (balance)
+      const valueSelect = screen.getByLabelText('Value Column')
+      fireEvent.mouseDown(valueSelect)
+      await waitFor(() => {
+        const balanceOption = screen.getByRole('option', { name: 'balance' })
+        fireEvent.click(balanceOption)
+      })
+
+      await waitFor(() => {
+        // Check table headers
+        expect(screen.getByText('balance (Left)')).toBeInTheDocument()
+        expect(screen.getByText('balance (Right)')).toBeInTheDocument()
+        expect(screen.getByText('Only Left')).toBeInTheDocument()
+        expect(screen.getByText('Only Right')).toBeInTheDocument()
+      })
+    })
+
+    it('shows case insensitive checkbox in compare mode', async () => {
+      render(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />)
+
+      // Switch to Compare mode
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Case insensitive')).toBeInTheDocument()
+      })
+    })
+
+    it('resets comparison when CSV data changes', async () => {
+      const { rerender } = render(
+        <CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />
+      )
+
+      // Switch to Compare mode
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Key Column')).toBeInTheDocument()
+      })
+
+      // Select key column (email)
+      const keySelect = screen.getByLabelText('Key Column')
+      fireEvent.mouseDown(keySelect)
+      await waitFor(() => {
+        const emailOption = screen.getByRole('option', { name: 'email' })
+        fireEvent.click(emailOption)
+      })
+
+      // Select value column (balance)
+      const valueSelect = screen.getByLabelText('Value Column')
+      fireEvent.mouseDown(valueSelect)
+      await waitFor(() => {
+        const balanceOption = screen.getByRole('option', { name: 'balance' })
+        fireEvent.click(balanceOption)
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText('Comparison Results (4 rows)')).toBeInTheDocument()
+      })
+
+      // Re-render with new CSV data
+      const newRightCSV = {
+        data: [{ email: 'new@example.com', balance: 500 }],
+        headers: ['email', 'balance']
+      }
+      rerender(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={newRightCSV} />)
+
+      // Comparison results should be reset
+      await waitFor(() => {
+        expect(screen.queryByText('Comparison Results (4 rows)')).not.toBeInTheDocument()
+      })
+    })
+
+    it('hides filter mode radio buttons in compare mode', async () => {
+      render(<CsvFilter leftCSV={mockLeftCSVForCompare} rightCSV={mockRightCSVForCompare} />)
+
+      // In Filter mode, radio buttons should be visible
+      expect(screen.getByText('Filter Mode')).toBeInTheDocument()
+
+      // Switch to Compare mode
+      const compareTab = screen.getByRole('tab', { name: 'Compare' })
+      fireEvent.click(compareTab)
+
+      await waitFor(() => {
+        expect(screen.queryByText('Filter Mode')).not.toBeInTheDocument()
       })
     })
   })

@@ -1,4 +1,4 @@
-import { filterCsvData, filterEmptyRows, parseCSV, ParseCSVError } from './csvFilterUtils'
+import { filterCsvData, filterEmptyRows, parseCSV, ParseCSVError, compareCSVData } from './csvFilterUtils'
 
 const mockLeftData = [
   { name: 'Alice', age: 25, city: 'NY' },
@@ -906,5 +906,209 @@ John,25`
 
     expect(resultWithBOM.headers).toEqual(resultWithoutBOM.headers)
     expect(resultWithBOM.data).toEqual(resultWithoutBOM.data)
+  })
+})
+
+describe('compareCSVData', () => {
+  const leftData = [
+    { email: 'alice@example.com', balance: 100 },
+    { email: 'bob@example.com', balance: 200 },
+    { email: 'charlie@example.com', balance: 300 }
+  ]
+
+  const rightData = [
+    { email: 'alice@example.com', balance: 150 },
+    { email: 'bob@example.com', balance: 200 },
+    { email: 'diana@example.com', balance: 400 }
+  ]
+
+  it('compares two CSVs and returns correct matched rows', () => {
+    const result = compareCSVData(leftData, rightData, 'email', 'balance')
+
+    expect(result.keyColumnName).toBe('email')
+    expect(result.valueColumnName).toBe('balance')
+    expect(result.summary.total).toBe(4) // alice, bob, charlie, diana
+    expect(result.summary.matched).toBe(2) // alice and bob
+    expect(result.summary.onlyLeft).toBe(1) // charlie
+    expect(result.summary.onlyRight).toBe(1) // diana
+  })
+
+  it('identifies only-left rows correctly', () => {
+    const result = compareCSVData(leftData, rightData, 'email', 'balance')
+
+    const charlieRow = result.rows.find((r) => r.keyValue === 'charlie@example.com')
+    expect(charlieRow).toBeDefined()
+    expect(charlieRow?.onlyLeft).toBe(true)
+    expect(charlieRow?.onlyRight).toBe(false)
+    expect(charlieRow?.leftValue).toBe(300)
+    expect(charlieRow?.rightValue).toBeUndefined()
+  })
+
+  it('identifies only-right rows correctly', () => {
+    const result = compareCSVData(leftData, rightData, 'email', 'balance')
+
+    const dianaRow = result.rows.find((r) => r.keyValue === 'diana@example.com')
+    expect(dianaRow).toBeDefined()
+    expect(dianaRow?.onlyLeft).toBe(false)
+    expect(dianaRow?.onlyRight).toBe(true)
+    expect(dianaRow?.leftValue).toBeUndefined()
+    expect(dianaRow?.rightValue).toBe(400)
+  })
+
+  it('shows both values for matched rows', () => {
+    const result = compareCSVData(leftData, rightData, 'email', 'balance')
+
+    const aliceRow = result.rows.find((r) => r.keyValue === 'alice@example.com')
+    expect(aliceRow).toBeDefined()
+    expect(aliceRow?.onlyLeft).toBe(false)
+    expect(aliceRow?.onlyRight).toBe(false)
+    expect(aliceRow?.leftValue).toBe(100)
+    expect(aliceRow?.rightValue).toBe(150)
+
+    const bobRow = result.rows.find((r) => r.keyValue === 'bob@example.com')
+    expect(bobRow).toBeDefined()
+    expect(bobRow?.leftValue).toBe(200)
+    expect(bobRow?.rightValue).toBe(200)
+  })
+
+  it('handles empty left data', () => {
+    const result = compareCSVData([], rightData, 'email', 'balance')
+
+    expect(result.summary.total).toBe(3)
+    expect(result.summary.onlyLeft).toBe(0)
+    expect(result.summary.onlyRight).toBe(3)
+    expect(result.summary.matched).toBe(0)
+  })
+
+  it('handles empty right data', () => {
+    const result = compareCSVData(leftData, [], 'email', 'balance')
+
+    expect(result.summary.total).toBe(3)
+    expect(result.summary.onlyLeft).toBe(3)
+    expect(result.summary.onlyRight).toBe(0)
+    expect(result.summary.matched).toBe(0)
+  })
+
+  it('handles both empty data', () => {
+    const result = compareCSVData([], [], 'email', 'balance')
+
+    expect(result.summary.total).toBe(0)
+    expect(result.summary.onlyLeft).toBe(0)
+    expect(result.summary.onlyRight).toBe(0)
+    expect(result.summary.matched).toBe(0)
+    expect(result.rows).toEqual([])
+  })
+
+  it('performs case-sensitive comparison by default', () => {
+    const left = [{ email: 'Alice@example.com', balance: 100 }]
+    const right = [{ email: 'alice@example.com', balance: 150 }]
+
+    const result = compareCSVData(left, right, 'email', 'balance')
+
+    expect(result.summary.total).toBe(2)
+    expect(result.summary.onlyLeft).toBe(1)
+    expect(result.summary.onlyRight).toBe(1)
+    expect(result.summary.matched).toBe(0)
+  })
+
+  it('performs case-insensitive comparison when option is set', () => {
+    const left = [{ email: 'Alice@example.com', balance: 100 }]
+    const right = [{ email: 'alice@example.com', balance: 150 }]
+
+    const result = compareCSVData(left, right, 'email', 'balance', { caseInsensitive: true })
+
+    expect(result.summary.total).toBe(1)
+    expect(result.summary.onlyLeft).toBe(0)
+    expect(result.summary.onlyRight).toBe(0)
+    expect(result.summary.matched).toBe(1)
+  })
+
+  it('preserves original key value (prefers left) in case-insensitive mode', () => {
+    const left = [{ email: 'Alice@example.com', balance: 100 }]
+    const right = [{ email: 'alice@example.com', balance: 150 }]
+
+    const result = compareCSVData(left, right, 'email', 'balance', { caseInsensitive: true })
+
+    expect(result.rows[0].keyValue).toBe('Alice@example.com')
+  })
+
+  it('handles null values in key column', () => {
+    const left = [
+      { email: 'alice@example.com', balance: 100 },
+      { email: null, balance: 999 }
+    ]
+    const right = [
+      { email: 'alice@example.com', balance: 150 },
+      { email: null, balance: 888 }
+    ]
+
+    const result = compareCSVData(left, right, 'email', 'balance')
+
+    expect(result.summary.matched).toBe(2) // alice and null both match
+    const nullRow = result.rows.find((r) => r.keyValue === null)
+    expect(nullRow?.leftValue).toBe(999)
+    expect(nullRow?.rightValue).toBe(888)
+  })
+
+  it('handles undefined values in key column', () => {
+    const left = [{ email: undefined, balance: 100 }]
+    const right = [{ email: undefined, balance: 200 }]
+
+    const result = compareCSVData(left, right, 'email', 'balance')
+
+    expect(result.summary.matched).toBe(1)
+    expect(result.rows[0].keyValue).toBe(null) // undefined is converted to null
+  })
+
+  it('handles missing value column data', () => {
+    const left = [{ email: 'alice@example.com' }]
+    const right = [{ email: 'alice@example.com', balance: 150 }]
+
+    const result = compareCSVData(left, right, 'email', 'balance')
+
+    expect(result.summary.matched).toBe(1)
+    expect(result.rows[0].leftValue).toBe(null) // undefined is converted to null
+    expect(result.rows[0].rightValue).toBe(150)
+  })
+
+  it('handles duplicate keys in left data (last value wins)', () => {
+    const left = [
+      { email: 'alice@example.com', balance: 100 },
+      { email: 'alice@example.com', balance: 999 }
+    ]
+    const right = [{ email: 'alice@example.com', balance: 150 }]
+
+    const result = compareCSVData(left, right, 'email', 'balance')
+
+    expect(result.summary.total).toBe(1)
+    expect(result.rows[0].leftValue).toBe(999) // Last value overwrites
+  })
+
+  it('handles numeric key values', () => {
+    const left = [
+      { id: 1, value: 'A' },
+      { id: 2, value: 'B' }
+    ]
+    const right = [
+      { id: 1, value: 'X' },
+      { id: 3, value: 'Y' }
+    ]
+
+    const result = compareCSVData(left, right, 'id', 'value')
+
+    expect(result.summary.total).toBe(3)
+    expect(result.summary.matched).toBe(1)
+    expect(result.summary.onlyLeft).toBe(1)
+    expect(result.summary.onlyRight).toBe(1)
+  })
+
+  it('does not mutate original data', () => {
+    const originalLeft = JSON.parse(JSON.stringify(leftData))
+    const originalRight = JSON.parse(JSON.stringify(rightData))
+
+    compareCSVData(leftData, rightData, 'email', 'balance')
+
+    expect(leftData).toEqual(originalLeft)
+    expect(rightData).toEqual(originalRight)
   })
 })

@@ -2,6 +2,28 @@ export type CSVRow = {
   [key: string]: string | number | undefined | null
 }
 
+export type OperationMode = 'filter' | 'compare'
+
+export interface ComparisonRow {
+  keyValue: string | number | null
+  leftValue: string | number | null | undefined
+  rightValue: string | number | null | undefined
+  onlyLeft: boolean
+  onlyRight: boolean
+}
+
+export interface ComparisonResult {
+  rows: ComparisonRow[]
+  keyColumnName: string
+  valueColumnName: string
+  summary: {
+    total: number
+    onlyLeft: number
+    onlyRight: number
+    matched: number
+  }
+}
+
 /**
  * Filters out rows that are completely empty (all values are empty strings, undefined, or null)
  * @param data - Array of CSV rows to filter
@@ -258,5 +280,109 @@ export function filterCsvData(
   } else {
     // Exclude rows that have matching values (default behavior)
     return leftData.filter((row) => !rightValues.has(normalizeValue(row[column])))
+  }
+}
+
+export interface CompareOptions {
+  caseInsensitive?: boolean
+}
+
+/**
+ * Compares two CSV datasets using a VLOOKUP-style comparison.
+ * Matches rows by a key column and compares values in a value column.
+ * @param leftData - Array of CSV rows from the left CSV file
+ * @param rightData - Array of CSV rows from the right CSV file
+ * @param keyColumn - The column name to use as the key for matching
+ * @param valueColumn - The column name to compare values
+ * @param options - Comparison options (e.g., caseInsensitive)
+ * @returns ComparisonResult with rows showing differences and summary counts
+ */
+export function compareCSVData(
+  leftData: CSVRow[],
+  rightData: CSVRow[],
+  keyColumn: string,
+  valueColumn: string,
+  options: CompareOptions = {}
+): ComparisonResult {
+  const { caseInsensitive = false } = options
+
+  // Normalize key values for comparison
+  const normalizeKey = (value: string | number | undefined | null): string => {
+    if (value === null || value === undefined) return ''
+    const strValue = String(value)
+    return caseInsensitive ? strValue.toLowerCase() : strValue
+  }
+
+  // Build maps for left and right data
+  // Map<normalizedKey, { originalKey, value }>
+  const leftMap = new Map<string, { keyValue: string | number | null; value: string | number | null | undefined }>()
+  const rightMap = new Map<string, { keyValue: string | number | null; value: string | number | null | undefined }>()
+
+  for (const row of leftData) {
+    const keyValue = row[keyColumn]
+    const normalizedKey = normalizeKey(keyValue)
+    const value = row[valueColumn]
+    // Store the original key value for display
+    leftMap.set(normalizedKey, {
+      keyValue: keyValue === undefined ? null : keyValue,
+      value: value === undefined ? null : value
+    })
+  }
+
+  for (const row of rightData) {
+    const keyValue = row[keyColumn]
+    const normalizedKey = normalizeKey(keyValue)
+    const value = row[valueColumn]
+    rightMap.set(normalizedKey, {
+      keyValue: keyValue === undefined ? null : keyValue,
+      value: value === undefined ? null : value
+    })
+  }
+
+  // Collect all unique normalized keys
+  const allKeys = new Set<string>([...leftMap.keys(), ...rightMap.keys()])
+
+  const rows: ComparisonRow[] = []
+  let onlyLeftCount = 0
+  let onlyRightCount = 0
+  let matchedCount = 0
+
+  for (const normalizedKey of allKeys) {
+    const leftEntry = leftMap.get(normalizedKey)
+    const rightEntry = rightMap.get(normalizedKey)
+
+    const onlyLeft = leftEntry !== undefined && rightEntry === undefined
+    const onlyRight = rightEntry !== undefined && leftEntry === undefined
+
+    if (onlyLeft) {
+      onlyLeftCount++
+    } else if (onlyRight) {
+      onlyRightCount++
+    } else {
+      matchedCount++
+    }
+
+    // Use the original key value from whichever side has it (prefer left)
+    const keyValue = leftEntry?.keyValue ?? rightEntry?.keyValue ?? null
+
+    rows.push({
+      keyValue,
+      leftValue: leftEntry?.value,
+      rightValue: rightEntry?.value,
+      onlyLeft,
+      onlyRight
+    })
+  }
+
+  return {
+    rows,
+    keyColumnName: keyColumn,
+    valueColumnName: valueColumn,
+    summary: {
+      total: rows.length,
+      onlyLeft: onlyLeftCount,
+      onlyRight: onlyRightCount,
+      matched: matchedCount
+    }
   }
 }
