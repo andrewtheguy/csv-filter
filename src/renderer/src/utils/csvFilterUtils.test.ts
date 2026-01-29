@@ -1070,6 +1070,54 @@ describe('compareCSVData', () => {
     expect(result.rows[0].status).toBe('diff')
   })
 
+  it('treats empty string keys as distinct from null/undefined keys', () => {
+    const left = [
+      { email: '', balance: 100 }, // empty string key
+      { email: null, balance: 200 } // null key
+    ]
+    const right = [
+      { email: '', balance: 100 }, // empty string key (same value)
+      { email: null, balance: 300 } // null key (different value)
+    ]
+
+    const result = compareCSVData(left, right, 'email', 'balance')
+
+    expect(result.summary.total).toBe(2) // two distinct keys: '' and null
+    expect(result.summary.matched).toBe(1) // empty string key matched (100 === 100)
+    expect(result.summary.diff).toBe(1) // null key has diff (200 vs 300)
+
+    const emptyStringRow = result.rows.find((r) => r.keyValue === '')
+    expect(emptyStringRow).toBeDefined()
+    expect(emptyStringRow?.status).toBe('matched')
+    expect(emptyStringRow?.leftValue).toBe(100)
+    expect(emptyStringRow?.rightValue).toBe(100)
+
+    const nullRow = result.rows.find((r) => r.keyValue === null)
+    expect(nullRow).toBeDefined()
+    expect(nullRow?.status).toBe('diff')
+    expect(nullRow?.leftValue).toBe(200)
+    expect(nullRow?.rightValue).toBe(300)
+  })
+
+  it('does not conflate empty string key with null key (only left vs only right)', () => {
+    const left = [{ email: '', balance: 100 }] // only empty string key
+    const right = [{ email: null, balance: 200 }] // only null key
+
+    const result = compareCSVData(left, right, 'email', 'balance')
+
+    expect(result.summary.total).toBe(2) // two distinct keys
+    expect(result.summary.matched).toBe(0)
+    expect(result.summary.diff).toBe(0)
+    expect(result.summary.onlyLeft).toBe(1) // empty string key only in left
+    expect(result.summary.onlyRight).toBe(1) // null key only in right
+
+    const emptyStringRow = result.rows.find((r) => r.keyValue === '')
+    expect(emptyStringRow?.status).toBe('only left')
+
+    const nullRow = result.rows.find((r) => r.keyValue === null)
+    expect(nullRow?.status).toBe('only right')
+  })
+
   it('handles missing value column data', () => {
     const left = [{ email: 'alice@example.com' }]
     const right = [{ email: 'alice@example.com', balance: 150 }]
