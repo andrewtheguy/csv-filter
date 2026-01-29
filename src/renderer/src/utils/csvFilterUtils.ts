@@ -308,17 +308,21 @@ export function compareCSVData(
 ): ComparisonResult {
   const { caseInsensitive = false } = options
 
+  // Sentinel value for null/undefined keys to avoid collision with empty string keys
+  const NULL_SENTINEL = '\0__NULL__\0'
+
   // Normalize key values for comparison
   const normalizeKey = (value: string | number | undefined | null): string => {
-    if (value === null || value === undefined) return ''
+    if (value === null || value === undefined) return NULL_SENTINEL
     const strValue = String(value)
     return caseInsensitive ? strValue.toLowerCase() : strValue
   }
 
   // Build maps for left and right data
   // Map<normalizedKey, { originalKey, value }>
-  const leftMap = new Map<string, { keyValue: string | number | null; value: string | number | null | undefined }>()
-  const rightMap = new Map<string, { keyValue: string | number | null; value: string | number | null | undefined }>()
+  type MapEntry = { keyValue: string | number | null; value: string | number | null | undefined }
+  const leftMap = new Map<string, MapEntry>()
+  const rightMap = new Map<string, MapEntry>()
 
   for (const row of leftData) {
     const keyValue = row[keyColumn]
