@@ -188,12 +188,17 @@ export async function parseCSV(csvContent: string, filePath: string): Promise<CS
 
 export type FilterMode = 'exclude' | 'include'
 
+export interface FilterOptions {
+  mode?: FilterMode
+  caseInsensitive?: boolean
+}
+
 /**
  * Filters left CSV data based on values in right CSV data.
  * @param leftData - Array of CSV rows from the left CSV file
  * @param rightData - Array of CSV rows from the right CSV file to filter against
  * @param column - The column name to filter on
- * @param mode - Filter mode: 'exclude' (remove matching rows) or 'include' (keep only matching rows)
+ * @param modeOrOptions - Filter mode or options object. Mode: 'exclude' (remove matching rows) or 'include' (keep only matching rows)
  * @returns Filtered array of CSV rows
  * @throws Error if data validation fails
  */
@@ -201,8 +206,13 @@ export function filterCsvData(
   leftData: CSVRow[],
   rightData: CSVRow[],
   column: string,
-  mode: FilterMode = 'exclude'
+  modeOrOptions: FilterMode | FilterOptions = 'exclude'
 ): CSVRow[] {
+  // Handle both old signature (mode string) and new signature (options object)
+  const options: FilterOptions =
+    typeof modeOrOptions === 'string' ? { mode: modeOrOptions } : modeOrOptions
+  const mode = options.mode ?? 'exclude'
+  const caseInsensitive = options.caseInsensitive ?? false
   // Validate input data
   if (!Array.isArray(leftData)) {
     throw new Error('Left CSV data must be an array')
@@ -233,13 +243,20 @@ export function filterCsvData(
     return leftData
   }
 
-  const rightValues = new Set(rightData.map((row) => row[column] || undefined))
+  // Normalize values for comparison (lowercase if case-insensitive)
+  const normalizeValue = (value: string | number | undefined | null): string | undefined => {
+    if (value === null || value === undefined) return undefined
+    const strValue = String(value)
+    return caseInsensitive ? strValue.toLowerCase() : strValue
+  }
+
+  const rightValues = new Set(rightData.map((row) => normalizeValue(row[column])))
 
   if (mode === 'include') {
     // Include only rows that have matching values
-    return leftData.filter((row) => rightValues.has(row[column] || undefined))
+    return leftData.filter((row) => rightValues.has(normalizeValue(row[column])))
   } else {
     // Exclude rows that have matching values (default behavior)
-    return leftData.filter((row) => !rightValues.has(row[column] || undefined))
+    return leftData.filter((row) => !rightValues.has(normalizeValue(row[column])))
   }
 }

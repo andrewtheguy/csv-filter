@@ -17,7 +17,8 @@ import {
   Pagination,
   RadioGroup,
   FormControlLabel,
-  Radio
+  Radio,
+  Checkbox
 } from '@mui/material'
 import DownloadIcon from '@mui/icons-material/Download'
 import Papa from 'papaparse'
@@ -45,12 +46,14 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
 }) => {
   const [selectedColumnIndex, setSelectedColumnIndex] = useState<number | ''>('')
   const [filterMode, setFilterMode] = useState<FilterMode>('exclude')
+  const [caseInsensitive, setCaseInsensitive] = useState<boolean>(false)
   const [filteredData, setFilteredData] = useState<CSVRow[]>([])
   const [filteredPage, setFilteredPage] = useState(1)
 
   // Reset filter when CSV data changes
   useEffect(() => {
     setSelectedColumnIndex('')
+    setCaseInsensitive(false)
     setFilteredData([])
     setFilteredPage(1)
   }, [leftCSV, rightCSV])
@@ -60,7 +63,10 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
     if (leftCSV && rightCSV && selectedColumnIndex !== '') {
       try {
         const selectedColumn = rightCSV.headers[selectedColumnIndex as number]
-        const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn, filterMode)
+        const filtered = filterCsvData(leftCSV.data, rightCSV.data, selectedColumn, {
+          mode: filterMode,
+          caseInsensitive
+        })
         const filteredWithoutEmpty = filterEmptyRows(filtered)
         setFilteredData(filteredWithoutEmpty)
         setFilteredPage(1) // Reset to first page when filter changes
@@ -72,7 +78,7 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
       setFilteredData([])
       setFilteredPage(1)
     }
-  }, [leftCSV, rightCSV, selectedColumnIndex, filterMode, onError])
+  }, [leftCSV, rightCSV, selectedColumnIndex, filterMode, caseInsensitive, onError])
 
   // Notify parent component of filtered data changes
   useEffect(() => {
@@ -135,6 +141,15 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
             label={<Typography sx={{ color: 'text.primary' }}>Include</Typography>}
           />
         </RadioGroup>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={caseInsensitive}
+              onChange={(e) => setCaseInsensitive(e.target.checked)}
+            />
+          }
+          label={<Typography sx={{ color: 'text.primary' }}>Case insensitive</Typography>}
+        />
       </Box>
 
       <Box sx={{ mb: 2 }}>
