@@ -31,7 +31,7 @@
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
     "papaparse": "^5.5.3",
-    "xlsx": "^0.18.5"
+    "read-excel-file": "^5.8.8"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

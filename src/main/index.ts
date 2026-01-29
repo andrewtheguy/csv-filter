@@ -4,7 +4,25 @@ import { writeFile } from 'fs/promises'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import * as XLSX from 'xlsx'
+import readXlsxFile, { readSheetNames, Row } from 'read-excel-file/node'
+
+function convertToCsv(rows: Row[]): string {
+  return rows
+    .map((row) =>
+      row
+        .map((cell) => {
+          if (cell === null || cell === undefined) return ''
+          if (cell instanceof Date) return cell.toISOString()
+          const str = String(cell)
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`
+          }
+          return str
+        })
+        .join(',')
+    )
+    .join('\n')
+}
 
 function createWindow(): void {
   // Create the browser window.
@@ -81,18 +99,17 @@ app.whenReady().then(() => {
     if (isExcel) {
       try {
         // Read Excel file and convert first sheet to CSV
-        const workbook = XLSX.readFile(filePath)
+        const sheetNames = await readSheetNames(filePath)
 
         // Validate that the workbook has exactly one sheet
-        if (workbook.SheetNames.length !== 1) {
+        if (sheetNames.length !== 1) {
           throw new Error(
-            `Excel file must contain exactly one sheet. This file has ${workbook.SheetNames.length} sheets: ${workbook.SheetNames.join(', ')}. Please ensure only one worksheet exists (visible or hidden) and try again.`
+            `Excel file must contain exactly one sheet. This file has ${sheetNames.length} sheets: ${sheetNames.join(', ')}. Please ensure only one worksheet exists (visible or hidden) and try again.`
           )
         }
 
-        const sheetName = workbook.SheetNames[0] // Use first sheet
-        const worksheet = workbook.Sheets[sheetName]
-        content = XLSX.utils.sheet_to_csv(worksheet)
+        const rows = await readXlsxFile(filePath)
+        content = convertToCsv(rows)
       } catch (error) {
         if (error instanceof Error && error.message.includes('must contain exactly one sheet')) {
           throw error // Re-throw validation errors as-is
