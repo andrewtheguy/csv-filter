@@ -16,6 +16,7 @@ import {
   Snackbar
 } from '@mui/material'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import CsvFilter from './components/CsvFilter'
 import { parseCSV, CSVData } from './utils/csvFilterUtils'
 
@@ -72,6 +73,15 @@ function App(): React.JSX.Element {
       setError(errorMessage)
       setErrorOpen(true)
     }
+  }
+
+  const handleFlip = (): void => {
+    setLeftCSV(rightCSV)
+    setRightCSV(leftCSV)
+    setLeftFilePath(rightFilePath)
+    setRightFilePath(leftFilePath)
+    setLeftPage(1)
+    setRightPage(1)
   }
 
   const renderTable = (
@@ -161,9 +171,19 @@ function App(): React.JSX.Element {
 
   return (
     <Box sx={{ p: 3, maxWidth: 'xl', mx: 'auto', height: '100vh', overflow: 'auto' }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
-        CSV Filter
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 0 }}>
+          CSV Filter
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<SwapHorizIcon />}
+          onClick={handleFlip}
+          disabled={!leftCSV && !rightCSV}
+        >
+          Swap Left & Right
+        </Button>
+      </Box>
 
       <Grid container spacing={3}>
         <Grid size={6}>
