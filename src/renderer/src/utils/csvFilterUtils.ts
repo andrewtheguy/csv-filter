@@ -298,6 +298,7 @@ export interface CompareOptions {
  * @param valueColumn - The column name to compare values
  * @param options - Comparison options (e.g., caseInsensitive)
  * @returns ComparisonResult with rows showing differences and summary counts
+ * @throws Error if data validation fails
  */
 export function compareCSVData(
   leftData: CSVRow[],
@@ -306,6 +307,26 @@ export function compareCSVData(
   valueColumn: string,
   options: CompareOptions = {}
 ): ComparisonResult {
+  // Validate input data
+  if (!Array.isArray(leftData)) {
+    throw new Error('Left CSV data must be an array')
+  }
+  if (!Array.isArray(rightData)) {
+    throw new Error('Right CSV data must be an array')
+  }
+  if (typeof keyColumn !== 'string') {
+    throw new Error('Key column name must be a string')
+  }
+  if (!keyColumn.trim()) {
+    throw new Error('Key column name cannot be empty')
+  }
+  if (typeof valueColumn !== 'string') {
+    throw new Error('Value column name must be a string')
+  }
+  if (!valueColumn.trim()) {
+    throw new Error('Value column name cannot be empty')
+  }
+
   const { caseInsensitive = false } = options
 
   // Sentinel value for null/undefined keys to avoid collision with empty string keys

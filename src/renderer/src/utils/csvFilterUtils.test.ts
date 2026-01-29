@@ -1136,4 +1136,58 @@ describe('compareCSVData', () => {
     expect(result.summary.diff).toBe(0)
     expect(result.rows[0].status).toBe('matched')
   })
+
+  describe('validation', () => {
+    it('throws error when keyColumn is empty', () => {
+      expect(() => {
+        compareCSVData([], [], '', 'balance')
+      }).toThrow('Key column name cannot be empty')
+    })
+
+    it('throws error when keyColumn is whitespace only', () => {
+      expect(() => {
+        compareCSVData([], [], '   ', 'balance')
+      }).toThrow('Key column name cannot be empty')
+    })
+
+    it('throws error when valueColumn is empty', () => {
+      expect(() => {
+        compareCSVData([], [], 'email', '')
+      }).toThrow('Value column name cannot be empty')
+    })
+
+    it('throws error when valueColumn is whitespace only', () => {
+      expect(() => {
+        compareCSVData([], [], 'email', '   ')
+      }).toThrow('Value column name cannot be empty')
+    })
+
+    it('throws error when leftData is not an array', () => {
+      expect(() => {
+        // @ts-expect-error Testing invalid input
+        compareCSVData(null, [], 'email', 'balance')
+      }).toThrow('Left CSV data must be an array')
+    })
+
+    it('throws error when rightData is not an array', () => {
+      expect(() => {
+        // @ts-expect-error Testing invalid input
+        compareCSVData([], null, 'email', 'balance')
+      }).toThrow('Right CSV data must be an array')
+    })
+
+    it('throws error when keyColumn is not a string', () => {
+      expect(() => {
+        // @ts-expect-error Testing invalid input
+        compareCSVData([], [], 123, 'balance')
+      }).toThrow('Key column name must be a string')
+    })
+
+    it('throws error when valueColumn is not a string', () => {
+      expect(() => {
+        // @ts-expect-error Testing invalid input
+        compareCSVData([], [], 'email', 123)
+      }).toThrow('Value column name must be a string')
+    })
+  })
 })
