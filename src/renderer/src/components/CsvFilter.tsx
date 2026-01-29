@@ -177,8 +177,7 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
         [comparisonResult.keyColumnName]: row.keyValue ?? '',
         [`${comparisonResult.valueColumnName}_left`]: row.leftValue ?? '',
         [`${comparisonResult.valueColumnName}_right`]: row.rightValue ?? '',
-        only_left: row.onlyLeft ? 'Yes' : 'No',
-        only_right: row.onlyRight ? 'Yes' : 'No'
+        status: row.status
       }))
 
       const csvString = Papa.unparse(exportData)
@@ -478,6 +477,12 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
                     variant="outlined"
                   />
                   <Chip
+                    label={`Diff: ${comparisonResult.summary.diff}`}
+                    size="small"
+                    color="error"
+                    variant="outlined"
+                  />
+                  <Chip
                     label={`Only Left: ${comparisonResult.summary.onlyLeft}`}
                     size="small"
                     color="warning"
@@ -522,8 +527,7 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
                           <TableCell>{comparisonResult.keyColumnName}</TableCell>
                           <TableCell>{comparisonResult.valueColumnName} (Left)</TableCell>
                           <TableCell>{comparisonResult.valueColumnName} (Right)</TableCell>
-                          <TableCell>Only Left</TableCell>
-                          <TableCell>Only Right</TableCell>
+                          <TableCell>Status</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -532,29 +536,46 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
                           const endIndex = startIndex + ITEMS_PER_PAGE
                           const currentPageData = comparisonResult.rows.slice(startIndex, endIndex)
 
+                          const getRowColor = (status: string): string => {
+                            switch (status) {
+                              case 'diff':
+                                return 'error.light'
+                              case 'only left':
+                                return 'warning.light'
+                              case 'only right':
+                                return 'info.light'
+                              default:
+                                return 'inherit'
+                            }
+                          }
+
+                          const getRowHoverColor = (status: string): string => {
+                            switch (status) {
+                              case 'diff':
+                                return 'error.main'
+                              case 'only left':
+                                return 'warning.main'
+                              case 'only right':
+                                return 'info.main'
+                              default:
+                                return 'action.hover'
+                            }
+                          }
+
                           return currentPageData.map((row, index) => (
                             <TableRow
                               key={startIndex + index}
                               sx={{
-                                bgcolor: row.onlyLeft
-                                  ? 'warning.light'
-                                  : row.onlyRight
-                                    ? 'info.light'
-                                    : 'inherit',
+                                bgcolor: getRowColor(row.status),
                                 '&:hover': {
-                                  bgcolor: row.onlyLeft
-                                    ? 'warning.main'
-                                    : row.onlyRight
-                                      ? 'info.main'
-                                      : 'action.hover'
+                                  bgcolor: getRowHoverColor(row.status)
                                 }
                               }}
                             >
                               <TableCell size="small">{row.keyValue ?? ''}</TableCell>
                               <TableCell size="small">{row.leftValue ?? ''}</TableCell>
                               <TableCell size="small">{row.rightValue ?? ''}</TableCell>
-                              <TableCell size="small">{row.onlyLeft ? 'Yes' : 'No'}</TableCell>
-                              <TableCell size="small">{row.onlyRight ? 'Yes' : 'No'}</TableCell>
+                              <TableCell size="small">{row.status}</TableCell>
                             </TableRow>
                           ))
                         })()}

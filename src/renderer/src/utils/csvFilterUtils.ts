@@ -4,12 +4,13 @@ export type CSVRow = {
 
 export type OperationMode = 'filter' | 'compare'
 
+export type ComparisonStatus = 'matched' | 'diff' | 'only left' | 'only right'
+
 export interface ComparisonRow {
   keyValue: string | number | null
   leftValue: string | number | null | undefined
   rightValue: string | number | null | undefined
-  onlyLeft: boolean
-  onlyRight: boolean
+  status: ComparisonStatus
 }
 
 export interface ComparisonResult {
@@ -18,9 +19,10 @@ export interface ComparisonResult {
   valueColumnName: string
   summary: {
     total: number
+    matched: number
+    diff: number
     onlyLeft: number
     onlyRight: number
-    matched: number
   }
 }
 
@@ -343,23 +345,33 @@ export function compareCSVData(
   const allKeys = new Set<string>([...leftMap.keys(), ...rightMap.keys()])
 
   const rows: ComparisonRow[] = []
+  let matchedCount = 0
+  let diffCount = 0
   let onlyLeftCount = 0
   let onlyRightCount = 0
-  let matchedCount = 0
 
   for (const normalizedKey of allKeys) {
     const leftEntry = leftMap.get(normalizedKey)
     const rightEntry = rightMap.get(normalizedKey)
 
-    const onlyLeft = leftEntry !== undefined && rightEntry === undefined
-    const onlyRight = rightEntry !== undefined && leftEntry === undefined
-
-    if (onlyLeft) {
+    let status: ComparisonStatus
+    if (leftEntry !== undefined && rightEntry === undefined) {
+      status = 'only left'
       onlyLeftCount++
-    } else if (onlyRight) {
+    } else if (rightEntry !== undefined && leftEntry === undefined) {
+      status = 'only right'
       onlyRightCount++
     } else {
-      matchedCount++
+      // Both exist - check if values match
+      const leftVal = leftEntry?.value
+      const rightVal = rightEntry?.value
+      if (leftVal === rightVal) {
+        status = 'matched'
+        matchedCount++
+      } else {
+        status = 'diff'
+        diffCount++
+      }
     }
 
     // Use the original key value from whichever side has it (prefer left)
@@ -369,8 +381,7 @@ export function compareCSVData(
       keyValue,
       leftValue: leftEntry?.value,
       rightValue: rightEntry?.value,
-      onlyLeft,
-      onlyRight
+      status
     })
   }
 
@@ -380,9 +391,10 @@ export function compareCSVData(
     valueColumnName: valueColumn,
     summary: {
       total: rows.length,
+      matched: matchedCount,
+      diff: diffCount,
       onlyLeft: onlyLeftCount,
-      onlyRight: onlyRightCount,
-      matched: matchedCount
+      onlyRight: onlyRightCount
     }
   }
 }

@@ -703,9 +703,10 @@ describe('CsvFilter Component', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Total: 4')).toBeInTheDocument()
-        expect(screen.getByText('Matched: 2')).toBeInTheDocument()
-        expect(screen.getByText('Only Left: 1')).toBeInTheDocument()
-        expect(screen.getByText('Only Right: 1')).toBeInTheDocument()
+        expect(screen.getByText('Matched: 1')).toBeInTheDocument() // bob (same value 200)
+        expect(screen.getByText('Diff: 1')).toBeInTheDocument() // alice (100 vs 150)
+        expect(screen.getByText('Only Left: 1')).toBeInTheDocument() // charlie
+        expect(screen.getByText('Only Right: 1')).toBeInTheDocument() // diana
       })
     })
 
@@ -818,8 +819,7 @@ describe('CsvFilter Component', () => {
         // Check table headers
         expect(screen.getByText('balance (Left)')).toBeInTheDocument()
         expect(screen.getByText('balance (Right)')).toBeInTheDocument()
-        expect(screen.getByText('Only Left')).toBeInTheDocument()
-        expect(screen.getByText('Only Right')).toBeInTheDocument()
+        expect(screen.getByRole('columnheader', { name: 'Status' })).toBeInTheDocument()
       })
     })
 
