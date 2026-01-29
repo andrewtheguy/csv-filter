@@ -13,12 +13,17 @@ function createWindow(): void {
     height: 670,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
+
+  // Set the dock icon on macOS
+  if (process.platform === 'darwin') {
+    app.dock.setIcon(icon)
+  }
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
