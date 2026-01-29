@@ -22,7 +22,7 @@ function createWindow(): void {
 
   // Set the dock icon on macOS
   if (process.platform === 'darwin') {
-    app.dock.setIcon(icon)
+    app.dock?.setIcon(icon)
   }
 
   mainWindow.on('ready-to-show', () => {
