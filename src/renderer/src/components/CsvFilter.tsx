@@ -48,6 +48,32 @@ export interface CsvFilterProps {
   onError?: (error: string) => void
 }
 
+const getRowColor = (status: string): string => {
+  switch (status) {
+    case 'diff':
+      return 'error.light'
+    case 'only left':
+      return 'warning.light'
+    case 'only right':
+      return 'info.light'
+    default:
+      return 'inherit'
+  }
+}
+
+const getRowHoverColor = (status: string): string => {
+  switch (status) {
+    case 'diff':
+      return 'error.main'
+    case 'only left':
+      return 'warning.main'
+    case 'only right':
+      return 'info.main'
+    default:
+      return 'action.hover'
+  }
+}
+
 const CsvFilter: React.FC<CsvFilterProps> = ({
   leftCSV,
   rightCSV,
@@ -535,32 +561,6 @@ const CsvFilter: React.FC<CsvFilterProps> = ({
                           const startIndex = (comparisonPage - 1) * ITEMS_PER_PAGE
                           const endIndex = startIndex + ITEMS_PER_PAGE
                           const currentPageData = comparisonResult.rows.slice(startIndex, endIndex)
-
-                          const getRowColor = (status: string): string => {
-                            switch (status) {
-                              case 'diff':
-                                return 'error.light'
-                              case 'only left':
-                                return 'warning.light'
-                              case 'only right':
-                                return 'info.light'
-                              default:
-                                return 'inherit'
-                            }
-                          }
-
-                          const getRowHoverColor = (status: string): string => {
-                            switch (status) {
-                              case 'diff':
-                                return 'error.main'
-                              case 'only left':
-                                return 'warning.main'
-                              case 'only right':
-                                return 'info.main'
-                              default:
-                                return 'action.hover'
-                            }
-                          }
 
                           return currentPageData.map((row, index) => (
                             <TableRow
