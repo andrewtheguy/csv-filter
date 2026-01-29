@@ -175,6 +175,73 @@ describe('filterCsvData', () => {
       { name: 'Diana', age: 28, city: 'Chicago' }
     ])
   })
+
+  it('performs case-sensitive comparison by default', () => {
+    const leftData = [
+      { email: 'Alice@example.com' },
+      { email: 'bob@example.com' },
+      { email: 'CHARLIE@example.com' }
+    ]
+    const rightData = [{ email: 'alice@example.com' }, { email: 'BOB@example.com' }]
+
+    const result = filterCsvData(leftData, rightData, 'email')
+
+    // None should be excluded because case doesn't match
+    expect(result).toEqual([
+      { email: 'Alice@example.com' },
+      { email: 'bob@example.com' },
+      { email: 'CHARLIE@example.com' }
+    ])
+  })
+
+  it('performs case-insensitive comparison when caseInsensitive option is true', () => {
+    const leftData = [
+      { email: 'Alice@example.com' },
+      { email: 'bob@example.com' },
+      { email: 'CHARLIE@example.com' }
+    ]
+    const rightData = [{ email: 'alice@example.com' }, { email: 'BOB@example.com' }]
+
+    const result = filterCsvData(leftData, rightData, 'email', { caseInsensitive: true })
+
+    // Alice and bob should be excluded (case-insensitive match)
+    expect(result).toEqual([{ email: 'CHARLIE@example.com' }])
+  })
+
+  it('performs case-insensitive include when both options are set', () => {
+    const leftData = [
+      { email: 'Alice@example.com' },
+      { email: 'bob@example.com' },
+      { email: 'CHARLIE@example.com' }
+    ]
+    const rightData = [{ email: 'alice@example.com' }, { email: 'BOB@example.com' }]
+
+    const result = filterCsvData(leftData, rightData, 'email', {
+      mode: 'include',
+      caseInsensitive: true
+    })
+
+    // Only Alice and bob should be included (case-insensitive match)
+    expect(result).toEqual([{ email: 'Alice@example.com' }, { email: 'bob@example.com' }])
+  })
+
+  it('accepts options object with only mode specified', () => {
+    const result = filterCsvData(mockLeftData, mockRightData, 'name', { mode: 'include' })
+
+    expect(result).toEqual([
+      { name: 'Alice', age: 25, city: 'NY' },
+      { name: 'Bob', age: 30, city: 'LA' }
+    ])
+  })
+
+  it('accepts options object with only caseInsensitive specified (defaults to exclude mode)', () => {
+    const leftData = [{ name: 'ALICE' }, { name: 'bob' }, { name: 'Charlie' }]
+    const rightData = [{ name: 'alice' }]
+
+    const result = filterCsvData(leftData, rightData, 'name', { caseInsensitive: true })
+
+    expect(result).toEqual([{ name: 'bob' }, { name: 'Charlie' }])
+  })
 })
 
 describe('filterEmptyRows', () => {
