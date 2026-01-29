@@ -1,120 +1,190 @@
 import { useState } from 'react'
-import Papa from 'papaparse'
 import {
-  Box, Button, Select, MenuItem, FormControl, InputLabel,
-  Paper, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Grid
+  Box,
+  Button,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Grid,
+  Pagination,
+  Alert,
+  Snackbar
 } from '@mui/material'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
-import DownloadIcon from '@mui/icons-material/Download'
-
-interface CSVRow {
-  [key: string]: string | number
-}
-
-interface CSVData {
-  data: CSVRow[]
-  headers: string[]
-}
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
+import CsvFilter from './components/CsvFilter'
+import { parseCSV, CSVData } from './utils/csvFilterUtils'
 
 function App(): React.JSX.Element {
   const [leftCSV, setLeftCSV] = useState<CSVData | null>(null)
   const [rightCSV, setRightCSV] = useState<CSVData | null>(null)
-  const [selectedColumn, setSelectedColumn] = useState<string>('')
-  const [filteredData, setFilteredData] = useState<CSVRow[]>([])
+  const [leftPage, setLeftPage] = useState(1)
+  const [rightPage, setRightPage] = useState(1)
+  const [leftFilePath, setLeftFilePath] = useState<string | null>(null)
+  const [rightFilePath, setRightFilePath] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [errorOpen, setErrorOpen] = useState(false)
 
-  const handleFileUpload = async (isLeft: boolean) => {
-    const result = await window.api.selectFile()
-    if (!result) return
+  const truncatePath = (path: string, maxLength: number = 50): string => {
+    if (path.length <= maxLength) return path
 
-    Papa.parse<CSVRow>(result.content, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const csvData: CSVData = {
-          data: results.data,
-          headers: results.meta.fields || []
-        }
-        if (isLeft) {
-          setLeftCSV(csvData)
-        } else {
-          setRightCSV(csvData)
-        }
-        resetFilter()
+    const fileName = path.split('/').pop() || ''
+    const pathWithoutFile = path.substring(0, path.lastIndexOf('/'))
+
+    if (pathWithoutFile.length === 0) return `.../${fileName}`
+
+    // Reserve space for start + "..." + "/" + filename
+    const startLength = Math.floor((maxLength - fileName.length - 4) / 2)
+
+    const start = pathWithoutFile.substring(0, startLength)
+    const end = pathWithoutFile.substring(pathWithoutFile.length - startLength)
+
+    // If we have enough space, show full path without truncation
+    if (pathWithoutFile.length <= maxLength - fileName.length - 1) {
+      return path
+    }
+
+    return `${start}...${end}/${fileName}`
+  }
+
+  const handleFileUpload = async (isLeft: boolean): Promise<void> => {
+    try {
+      const result = await window.api.selectFile()
+      if (!result) return
+
+      const csvData = await parseCSV(result.content, result.filePath)
+
+      if (isLeft) {
+        setLeftCSV(csvData)
+        setLeftFilePath(result.filePath)
+        setLeftPage(1) // Reset to first page when new data is loaded
+      } else {
+        setRightCSV(csvData)
+        setRightFilePath(result.filePath)
+        setRightPage(1) // Reset to first page when new data is loaded
       }
-    })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      setError(errorMessage)
+      setErrorOpen(true)
+    }
   }
 
-  const resetFilter = () => {
-    setSelectedColumn('')
-    setFilteredData([])
+  const handleFlip = (): void => {
+    setLeftCSV(rightCSV)
+    setRightCSV(leftCSV)
+    setLeftFilePath(rightFilePath)
+    setRightFilePath(leftFilePath)
+    setLeftPage(1)
+    setRightPage(1)
   }
 
-  const applyFilter = () => {
-    if (!leftCSV || !rightCSV || !selectedColumn) return
-
-    const rightValues = new Set(
-      rightCSV.data.map(row => row[selectedColumn])
-    )
-
-    const filtered = leftCSV.data.filter(row => 
-      !rightValues.has(row[selectedColumn])
-    )
-    setFilteredData(filtered)
-  }
-
-  const exportFiltered = async () => {
-    if (!leftCSV || filteredData.length === 0) return
-
-    const csvString = Papa.unparse(filteredData)
-    await window.api.saveFile(csvString)
-  }
-
-  const renderTable = (data: CSVData | null, title: string) => {
+  const renderTable = (
+    data: CSVData | null,
+    title: string,
+    filePath: string | null,
+    currentPage: number,
+    onPageChange: (event: React.ChangeEvent<unknown>, page: number) => void
+  ): React.JSX.Element => {
+    const displayTitle = filePath ? `${title}: ${truncatePath(filePath)}` : title
     if (!data || data.data.length === 0) {
       return (
-        <Paper sx={{ p: 2, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper
+          sx={{
+            p: 2,
+            height: 300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
           <Typography>No data loaded</Typography>
         </Paper>
       )
     }
-    const previewData = data.data.slice(0, 10)
+
+    const ITEMS_PER_PAGE = 10
+    const totalPages = Math.ceil(data.data.length / ITEMS_PER_PAGE)
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    const currentPageData = data.data.slice(startIndex, endIndex)
+
+    // Create display headers, showing "(Empty column n)" for empty headers (where n is column position)
+    const displayHeaders = data.headers.map((header, index) => {
+      if (!header.trim()) {
+        return `(Empty column ${index + 1})`
+      }
+      return header
+    })
+
     return (
       <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>{title}</Typography>
-        <TableContainer sx={{ maxHeight: 300 }}>
+        <Typography variant="body1" sx={{ mb: 2, fontSize: '0.875rem', fontWeight: 500 }}>
+          {displayTitle}
+        </Typography>
+        <TableContainer sx={{ maxHeight: 300, overflowX: 'auto' }}>
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
-                {data.headers.map(header => (
-                  <TableCell key={header}>{header}</TableCell>
+                {displayHeaders.map((header, index) => (
+                  <TableCell key={index}>{header}</TableCell>
                 ))}
               </TableRow>
             </TableHead>
             <TableBody>
-              {previewData.map((row, index) => (
-                <TableRow key={index}>
-                  {data.headers.map(header => (
-                    <TableCell key={header} size="small">{row[header]}</TableCell>
+              {currentPageData.map((row, index) => (
+                <TableRow key={startIndex + index}>
+                  {data.headers.map((header) => (
+                    <TableCell key={header} size="small">
+                      {row[header]}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
-        <Typography variant="caption" sx={{ mt: 1 }}>
-          Showing {previewData.length} of {data.data.length} rows
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+          <Typography variant="caption">
+            Showing {startIndex + 1}-{Math.min(endIndex, data.data.length)} of {data.data.length}{' '}
+            rows
+          </Typography>
+          {totalPages > 1 && (
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={onPageChange}
+              size="small"
+              siblingCount={1}
+              boundaryCount={1}
+            />
+          )}
+        </Box>
       </Paper>
     )
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 'xl', mx: 'auto' }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
-        CSV Comparator
-      </Typography>
-      
+    <Box sx={{ p: 3, maxWidth: 'xl', mx: 'auto', height: '100vh', overflow: 'auto' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 0 }}>
+          CSV Filter
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<SwapHorizIcon />}
+          onClick={handleFlip}
+          disabled={!leftCSV && !rightCSV}
+        >
+          Swap Left & Right
+        </Button>
+      </Box>
+
       <Grid container spacing={3}>
         <Grid size={6}>
           <Box sx={{ mb: 2 }}>
@@ -127,9 +197,11 @@ function App(): React.JSX.Element {
               Load Left CSV (Source)
             </Button>
           </Box>
-          {renderTable(leftCSV, "Left CSV - Source")}
+          {renderTable(leftCSV, 'Left CSV - Source', leftFilePath, leftPage, (_event, page) =>
+            setLeftPage(page)
+          )}
         </Grid>
-        
+
         <Grid size={6}>
           <Box sx={{ mb: 2 }}>
             <Button
@@ -141,56 +213,36 @@ function App(): React.JSX.Element {
               Load Right CSV (Filter)
             </Button>
           </Box>
-          {renderTable(rightCSV, "Right CSV - Filter")}
+          {renderTable(rightCSV, 'Right CSV - Filter', rightFilePath, rightPage, (_event, page) =>
+            setRightPage(page)
+          )}
         </Grid>
       </Grid>
-      
-      {rightCSV && (
-        <Box sx={{ mt: 3 }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Select Column to Filter By</InputLabel>
-            <Select
-              value={selectedColumn}
-              onChange={(e) => setSelectedColumn(e.target.value)}
-            >
-              {rightCSV.headers.map(header => (
-                <MenuItem key={header} value={header}>{header}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <Button 
-              variant="contained" 
-              color="secondary"
-              onClick={applyFilter}
-              disabled={!leftCSV || !selectedColumn}
-            >
-              Apply Filter
-            </Button>
-            {filteredData.length > 0 && (
-              <Button 
-                variant="contained" 
-                startIcon={<DownloadIcon />}
-                onClick={exportFiltered}
-              >
-                Export Filtered CSV
-              </Button>
-            )}
-          </Box>
-        </Box>
-      )}
-      
-      {filteredData.length > 0 && (
-        <Paper sx={{ mt: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Filtered Results: {filteredData.length} rows
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Rows from left CSV excluding those that match in selected column from right CSV
-          </Typography>
-        </Paper>
-      )}
+
+      <CsvFilter
+        leftCSV={leftCSV}
+        rightCSV={rightCSV}
+        leftFileName={leftFilePath ? leftFilePath.split('/').pop() || null : null}
+        onError={(error) => {
+          setError(error)
+          setErrorOpen(true)
+        }}
+      />
+
+      <Snackbar
+        open={errorOpen}
+        autoHideDuration={6000}
+        onClose={() => setErrorOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setErrorOpen(false)}
+          severity="error"
+          sx={{ width: '100%', maxWidth: 600 }}
+        >
+          {error}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

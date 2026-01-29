@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: electron
+appId: com.electron.csv-filter
+productName: csv-filter
 directories:
   buildResources: build
 files:
@@ -12,13 +12,16 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: electron
+  executableName: csv-filter
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  target: dmg
+  # uncomment to disable code signing for now
+  identity: null
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
