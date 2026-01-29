@@ -387,10 +387,10 @@ export function compareCSVData(
       status = 'only right'
       onlyRightCount++
     } else {
-      // Both exist - check if values match
-      const leftVal = leftEntry?.value
-      const rightVal = rightEntry?.value
-      if (leftVal === rightVal) {
+      // Both exist - check if values match (normalize to handle type differences like 100 vs "100")
+      const leftValNorm = String(leftEntry?.value ?? '').trim()
+      const rightValNorm = String(rightEntry?.value ?? '').trim()
+      if (leftValNorm === rightValNorm) {
         status = 'matched'
         matchedCount++
       } else {

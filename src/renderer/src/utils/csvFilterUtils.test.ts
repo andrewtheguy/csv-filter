@@ -1137,6 +1137,42 @@ describe('compareCSVData', () => {
     expect(result.rows[0].status).toBe('matched')
   })
 
+  it('treats number and equivalent string as matched (e.g., 100 vs "100")', () => {
+    const left = [{ email: 'alice@example.com', balance: 100 }]
+    const right = [{ email: 'alice@example.com', balance: '100' }]
+
+    const result = compareCSVData(left, right, 'email', 'balance')
+
+    expect(result.summary.total).toBe(1)
+    expect(result.summary.matched).toBe(1)
+    expect(result.summary.diff).toBe(0)
+    expect(result.rows[0].status).toBe('matched')
+  })
+
+  it('treats values with surrounding whitespace as matched after trimming', () => {
+    const left = [{ email: 'alice@example.com', balance: 'hello' }]
+    const right = [{ email: 'alice@example.com', balance: '  hello  ' }]
+
+    const result = compareCSVData(left, right, 'email', 'balance')
+
+    expect(result.summary.total).toBe(1)
+    expect(result.summary.matched).toBe(1)
+    expect(result.summary.diff).toBe(0)
+    expect(result.rows[0].status).toBe('matched')
+  })
+
+  it('treats null and undefined values as matched (both normalize to empty string)', () => {
+    const left = [{ email: 'alice@example.com', balance: null }]
+    const right = [{ email: 'alice@example.com', balance: undefined }]
+
+    const result = compareCSVData(left, right, 'email', 'balance')
+
+    expect(result.summary.total).toBe(1)
+    expect(result.summary.matched).toBe(1)
+    expect(result.summary.diff).toBe(0)
+    expect(result.rows[0].status).toBe('matched')
+  })
+
   describe('validation', () => {
     it('throws error when keyColumn is empty', () => {
       expect(() => {
