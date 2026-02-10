@@ -23,7 +23,7 @@ jobs:
       - name: Generate timestamp version
         id: version
         run: |
-          VERSION="0.0.1-pre.$(date -u +'%Y%m%d%H%M%S')"
+          VERSION="0.0.1-pre.$(git rev-parse --short HEAD)"
           npm pkg set version="$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
