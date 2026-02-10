@@ -2,6 +2,9 @@ name: Build Mac
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build:
@@ -20,12 +23,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate timestamp version
+      - name: Generate version
         id: version
         run: |
-          VERSION="0.0.1-pre.$(git rev-parse --short HEAD)"
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            TAG_NAME="$GITHUB_REF_NAME"
+          else
+            VERSION="0.0.1-pre.$(git rev-parse --short HEAD)"
+            TAG_NAME="v$VERSION"
+          fi
           npm pkg set version="$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Build Mac
         run: npm run build:mac
@@ -33,7 +43,7 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
-          prerelease: true
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          name: ${{ steps.version.outputs.tag_name }}
+          prerelease: ${{ github.ref_type != 'tag' }}
           files: dist/*.dmg
