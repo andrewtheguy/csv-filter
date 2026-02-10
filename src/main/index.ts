@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, screen } from 'electron'
 import { readFileSync } from 'fs'
 import { writeFile } from 'fs/promises'
 import { join } from 'path'
@@ -25,10 +25,14 @@ function convertToCsv(rows: Row[]): string {
 }
 
 function createWindow(): void {
-  // Create the browser window.
+  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize
+  const windowWidth = Math.round(screenWidth * 0.9)
+  const windowHeight = Math.round(screenHeight * 0.9)
+
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: windowWidth,
+    height: windowHeight,
+    center: true,
     show: false,
     autoHideMenuBar: true,
     icon,
