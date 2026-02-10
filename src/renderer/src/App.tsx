@@ -176,12 +176,31 @@ function App(): React.JSX.Element {
           CSV Filter
         </Typography>
         <Button
-          variant="outlined"
+          variant="contained"
           startIcon={<SwapHorizIcon />}
           onClick={handleFlip}
           disabled={!leftCSV && !rightCSV}
+          sx={{
+            bgcolor: '#334155',
+            color: '#f1f5f9',
+            fontWeight: 600,
+            letterSpacing: '0.025em',
+            px: 3,
+            py: 1,
+            borderRadius: 2,
+            textTransform: 'none',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+            '&:hover': {
+              bgcolor: '#1e293b',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+            },
+            '&.Mui-disabled': {
+              bgcolor: '#cbd5e1',
+              color: '#94a3b8'
+            }
+          }}
         >
-          Swap Left & Right
+          Swap Left &amp; Right
         </Button>
       </Box>
 
